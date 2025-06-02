@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import EC2Dashboard from './pages/EC2Dashboard';
+import EC2Dashboard from './pages/EC2Dashboard.js';
 
 function Placeholder({ title }) {
   return (

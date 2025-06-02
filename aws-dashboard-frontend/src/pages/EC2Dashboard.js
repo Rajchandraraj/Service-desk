@@ -3,90 +3,93 @@ import axios from 'axios';
 
 function EC2Dashboard({ region }) {
   const [instances, setInstances] = useState([]);
-  const [selected, setSelected] = useState(null);
 
   useEffect(() => {
-    if (!region) return;
-
-    axios.get(`http://65.0.7.159:5000/instances/${region}`)
+    axios.get(`http://localhost:5000/instances/${region}`)
       .then(res => {
-        if (Array.isArray(res.data)) {
-          setInstances(res.data);
-          setSelected(null); // clear selected when region changes
-        }
-      })
-      .catch(err => {
-        console.error('Error fetching instances:', err);
-        setInstances([]);
+        if (Array.isArray(res.data)) setInstances(res.data);
       });
   }, [region]);
 
-  const handleResize = (id, type) => {
-    const newType = prompt("Enter new instance type:", type);
-    if (newType) {
-      axios.post(`http://65.0.7.159:5000/instance/${region}/${id}/resize`, {
-        instance_type: newType
-      }).then(() => alert('Resize requested.'));
-    }
-  };
-
-  const handleTerminate = id => {
-    if (window.confirm("Are you sure to terminate this instance?")) {
-      axios.post(`http://65.0.7.159:5000/instance/${region}/${id}/terminate`)
-        .then(() => alert('Instance terminated.'));
-    }
+  const handleAction = (id, action) => {
+    axios.post(`http://localhost:5000/instance/${region}/${id}/${action}`)
+      .then(() => {
+        alert(`Instance ${action} request sent.`);
+        setInstances(prev => prev.map(inst => inst.id === id ? { ...inst, state: action === 'start' ? 'running' : 'stopped' } : inst));
+      });
   };
 
   return (
     <div className="mt-4">
-      <h2 className="text-xl font-bold mb-2">EC2 Instances in <span className="text-blue-600">{region}</span></h2>
-
-      {instances.length === 0 ? (
-        <p className="text-gray-500">No instances found.</p>
-      ) : (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="font-semibold mb-2">Instances</h3>
-            <ul>
-              {instances.map(inst => (
-                <li key={inst.id} className="mb-2">
+      <h2 className="text-xl font-bold mb-4">EC2 Instances in {region}</h2>
+      <table className="min-w-full bg-white shadow rounded">
+        <thead>
+          <tr className="bg-gray-100 text-left text-sm font-semibold">
+            <th className="p-2">Name</th>
+            <th className="p-2">Instance ID</th>
+            <th className="p-2">Type</th>
+            <th className="p-2">AZ</th>
+            <th className="p-2">State</th>
+            <th className="p-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {instances.map(inst => {
+            const name = inst.name || (inst.tags || []).find(tag => tag.Key === 'Name')?.Value || 'Unnamed';
+            return (
+              <tr key={inst.id} className="border-b hover:bg-gray-50">
+                <td className="p-2">{name}</td>
+                <td className="p-2">{inst.id}</td>
+                <td className="p-2">{inst.type}</td>
+                <td className="p-2">{inst.az}</td>
+                <td className="p-2 capitalize">{inst.state}</td>
+                <td className="p-2 space-x-2">
+                  {inst.state === 'stopped' && (
+                    <button
+                      onClick={() => handleAction(inst.id, 'start')}
+                      className="bg-green-500 text-white px-2 py-1 rounded"
+                    >
+                      Start
+                    </button>
+                  )}
+                  {inst.state === 'running' && (
+                    <button
+                      onClick={() => handleAction(inst.id, 'stop')}
+                      className="bg-yellow-500 text-white px-2 py-1 rounded"
+                    >
+                      Stop
+                    </button>
+                  )}
                   <button
-                    onClick={() => setSelected(inst)}
-                    className="text-blue-500 hover:underline"
+                    onClick={() => {
+                      const newType = prompt("Enter new instance type:", inst.type);
+                      if (newType) {
+                        axios.post(`http://localhost:5000/instance/${region}/${inst.id}/resize`, {
+                          instance_type: newType
+                        }).then(() => alert('Resize requested.'));
+                      }
+                    }}
+                    className="bg-blue-500 text-white px-2 py-1 rounded"
                   >
-                    {inst.name || inst.id}
+                    Resize
                   </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {selected && (
-            <div className="bg-white p-4 rounded shadow">
-              <h3 className="font-semibold mb-2">Instance Details</h3>
-              <p><b>ID:</b> {selected.id}</p>
-              <p><b>Name:</b> {selected.name || 'N/A'}</p>
-              <p><b>Type:</b> {selected.type}</p>
-              <p><b>AZ:</b> {selected.az}</p>
-              <p><b>Volumes:</b> {selected.volumes?.join(', ') || 'None'}</p>
-              <p><b>Role:</b> {selected.role}</p>
-
-              <button
-                onClick={() => handleResize(selected.id, selected.type)}
-                className="bg-yellow-500 text-white px-4 py-1 rounded mt-2"
-              >
-                Resize
-              </button>
-              <button
-                onClick={() => handleTerminate(selected.id)}
-                className="bg-red-600 text-white px-4 py-1 rounded ml-2 mt-2"
-              >
-                Decommission
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+                  <button
+                    onClick={() => {
+                      if (window.confirm("Are you sure to terminate this instance?")) {
+                        axios.post(`http://localhost:5000/instance/${region}/${inst.id}/terminate`)
+                          .then(() => alert('Instance terminated.'));
+                      }
+                    }}
+                    className="bg-red-600 text-white px-2 py-1 rounded"
+                  >
+                    Terminate
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
