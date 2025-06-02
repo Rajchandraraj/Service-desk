@@ -28,7 +28,7 @@ function App() {
       </header>
 
       <nav className="flex space-x-4 mt-4">
-        {['Monitoring', 'Resource management', 'Resource creation', 'Database'].map(tab => (
+        {['Monitoring', 'Resource management', 'Resource creation', 'Standalone Automation'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -41,7 +41,7 @@ function App() {
 
       {activeTab === 'Monitoring' && <Placeholder title="Monitoring" />}
       {activeTab === 'Resource creation' && <Placeholder title="Resource Creation" />}
-      {activeTab === 'Database' && <Placeholder title="Database" />}
+      {activeTab === 'Standalone Automation' && <Placeholder title="Standalone Automation" />}
 
       {activeTab === 'Resource management' && (
         <div className="mt-4">
