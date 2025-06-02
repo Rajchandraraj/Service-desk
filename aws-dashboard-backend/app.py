@@ -17,8 +17,10 @@ def list_instances(region):
 
     for res in instances['Reservations']:
         for inst in res['Instances']:
+            name = next((tag['Value'] for tag in inst.get('Tags', []) if tag['Key'] == 'Name'), None)
             output.append({
                 'id': inst['InstanceId'],
+                'name': name,
                 'type': inst['InstanceType'],
                 'state': inst['State']['Name'],
                 'az': inst['Placement']['AvailabilityZone'],
@@ -48,6 +50,18 @@ def terminate_instance(region, instance_id):
     ec2 = get_ec2_client(region)
     ec2.terminate_instances(InstanceIds=[instance_id])
     return jsonify({'status': 'success', 'message': f'Terminated {instance_id}'})
+
+@app.route('/instance/<region>/<instance_id>/start', methods=['POST'])
+def start_instance(region, instance_id):
+    ec2 = get_ec2_client(region)
+    ec2.start_instances(InstanceIds=[instance_id])
+    return jsonify({'status': 'success', 'message': f'Started {instance_id}'})
+
+@app.route('/instance/<region>/<instance_id>/stop', methods=['POST'])
+def stop_instance(region, instance_id):
+    ec2 = get_ec2_client(region)
+    ec2.stop_instances(InstanceIds=[instance_id])
+    return jsonify({'status': 'success', 'message': f'Stopped {instance_id}'})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
