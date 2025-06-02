@@ -1,0 +1,104 @@
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+function App() {
+  const [region, setRegion] = useState('us-east-1');
+  const [instances, setInstances] = useState([]);
+  const [selected, setSelected] = useState(null);
+
+  useEffect(() => {
+    axios.get(`http://65.0.7.159:5000/instances/${region}`)
+      .then(res => {
+	      console.log("Instances fetched:", res.data);
+	      setInstances(res.data);
+	      }).catch(err => {
+      console.error("Failed to fetch:", err);
+      });
+  }, [region]);
+
+  const handleResize = (id, type) => {
+    const newType = prompt("Enter new instance type:", type);
+    if (newType) {
+      axios.post(`http://65.0.7.159:5000/instance/${region}/${id}/resize`, {
+        instance_type: newType
+      }).then(() => alert('Resize requested.'));
+    }
+  };
+
+  const handleTerminate = id => {
+    if (window.confirm("Are you sure to terminate this instance?")) {
+      axios.post(`http://65.0.7.159:5000/instance/${region}/${id}/terminate`)
+        .then(() => alert('Instance terminated.'));
+    }
+  };
+
+  return (
+  <div className="min-h-screen bg-gray-100 font-sans p-4">
+    <header className="flex items-center justify-between bg-red-600 text-white p-4 rounded-lg shadow-md">
+      <div className="flex items-center space-x-4">
+        <img src="/rapyder.png" alt="Logo" className="h-10" />
+        <h1 className="text-3xl font-bold">AWS EC2 Dashboard</h1>
+      </div>
+      <div>
+        <label className="mr-2 font-semibold">Region:</label>
+        <select
+          value={region}
+          onChange={e => setRegion(e.target.value)}
+          className="text-black p-1 rounded"
+        >
+          <option>us-east-1</option>
+          <option>us-west-2</option>
+          <option>ap-south-1</option>
+        </select>
+      </div>
+    </header>
+
+    <main className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+      <div className="bg-white p-4 rounded-lg shadow">
+        <h2 className="text-xl font-semibold mb-4">Instances</h2>
+        <ul className="space-y-2">
+	  {instances.length > 0 ? (
+	    instances.map(inst => (
+	      <li key={inst.id} className="mb-2 border-b pb-2">
+	        <button onClick={() => setSelected(inst)} className="text-blue-600 hover:underline">
+	          {inst.id} — {inst.type} — {inst.state}
+	        </button>
+	      </li>
+	    ))
+	  ) : (
+	    <li>No instances found.</li>
+	  )}
+	</ul>
+      </div>
+
+      {selected && (
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h2 className="text-xl font-semibold mb-4">Instance Details</h2>
+          <div className="space-y-2">
+            <p><strong>Type:</strong> {selected.type}</p>
+            <p><strong>AZ:</strong> {selected.az}</p>
+            <p><strong>Volumes:</strong> {selected.volumes.join(', ')}</p>
+            <p><strong>Role:</strong> {selected.role}</p>
+            <div className="space-x-2 mt-4">
+              <button
+                onClick={() => handleResize(selected.id, selected.type)}
+                className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
+              >
+                Resize
+              </button>
+              <button
+                onClick={() => handleTerminate(selected.id)}
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+              >
+                Decommission
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  </div>
+);
+}
+
+export default App;
