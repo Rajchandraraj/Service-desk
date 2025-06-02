@@ -1,0 +1,50 @@
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Production
+.env
+.env.*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# IDE-specific
+.vscode/
+.idea/
+*.swp
+
+# Testing
+coverage/
+*.lcov
+
+# Next.js (if used)
+.next/
+
+# React Native (if applicable)
+.expo/
+*.expo
+
+# Optional: lockfiles (pick one if you're using a specific package manager)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Cache
+.cache/
+.nyc_output/
+turbo/
