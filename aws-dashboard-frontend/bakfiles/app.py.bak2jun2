@@ -21,7 +21,21 @@ def list_instances(region):
 
     for res in instances['Reservations']:
         for inst in res['Instances']:
-            cpu = None  # removed from list_instances for performance; fetched separately
+            try:
+                metrics = get_cloudwatch_client(region).get_metric_statistics(
+                    Namespace='AWS/EC2',
+                    MetricName='CPUUtilization',
+                    Dimensions=[{'Name': 'InstanceId', 'Value': inst['InstanceId']}],
+                    StartTime=datetime.datetime.utcnow() - datetime.timedelta(hours=1),
+                    EndTime=datetime.datetime.utcnow(),
+                    Period=300,
+                    Statistics=['Average']
+                )
+                datapoints = sorted(metrics['Datapoints'], key=lambda x: x['Timestamp'])
+                cpu = round(datapoints[-1]['Average'], 2) if datapoints else 0.0
+            except Exception as e:
+                print(f"[WARN] CloudWatch CPU fetch failed for {inst['InstanceId']}: {e}")
+                cpu = 0.0
             name = next((tag['Value'] for tag in inst.get('Tags', []) if tag['Key'] == 'Name'), None)
             output.append({
                 'id': inst['InstanceId'],

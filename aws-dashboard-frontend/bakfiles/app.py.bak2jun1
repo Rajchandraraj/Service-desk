@@ -1,7 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import boto3
-import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -9,9 +8,6 @@ CORS(app)
 # Assumes default AWS creds or IAM role
 def get_ec2_client(account_region='us-east-1'):
     return boto3.client('ec2', region_name=account_region)
-
-def get_cloudwatch_client(account_region='us-east-1'):
-    return boto3.client('cloudwatch', region_name=account_region)
 
 @app.route('/instances/<region>', methods=['GET'])
 def list_instances(region):
@@ -21,7 +17,6 @@ def list_instances(region):
 
     for res in instances['Reservations']:
         for inst in res['Instances']:
-            cpu = None  # removed from list_instances for performance; fetched separately
             name = next((tag['Value'] for tag in inst.get('Tags', []) if tag['Key'] == 'Name'), None)
             output.append({
                 'id': inst['InstanceId'],
@@ -32,7 +27,6 @@ def list_instances(region):
                 'volumes': [v['Ebs']['VolumeId'] for v in inst.get('BlockDeviceMappings', [])],
                 'tags': inst.get('Tags', []),
                 'role': inst.get('IamInstanceProfile', {}).get('Arn', 'None'),
-                'cpu': cpu,
             })
     return jsonify(output)
 
