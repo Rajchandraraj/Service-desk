@@ -1,0 +1,117 @@
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+function EC2Dashboard({ region }) {
+  const [instances, setInstances] = useState([]);
+  const [expandedId, setExpandedId] = useState(null);
+
+  useEffect(() => {
+    axios.get(`http://localhost:5000/instances/${region}`)
+      .then(res => {
+        if (Array.isArray(res.data)) setInstances(res.data);
+      });
+  }, [region]);
+
+  const handleAction = (id, action) => {
+    axios.post(`http://localhost:5000/instance/${region}/${id}/${action}`)
+      .then(() => {
+        alert(`Instance ${action} request sent.`);
+        setInstances(prev => prev.map(inst => inst.id === id ? { ...inst, state: action === 'start' ? 'running' : 'stopped' } : inst));
+      });
+  };
+
+  const handleResize = (id, type) => {
+    const newType = prompt("Enter new instance type:", type);
+    if (newType) {
+      axios.post(`http://localhost:5000/instance/${region}/${id}/resize`, {
+        instance_type: newType
+      }).then(() => alert('Resize requested.'));
+    }
+  };
+
+  const handleTerminate = id => {
+    if (window.confirm("Are you sure to terminate this instance?")) {
+      axios.post(`http://localhost:5000/instance/${region}/${id}/terminate`)
+        .then(() => alert('Instance terminated.'));
+    }
+  };
+
+  return (
+    <div className="mt-4">
+      <h2 className="text-xl font-bold mb-4">EC2 Instances in {region}</h2>
+      <table className="min-w-full bg-white shadow rounded">
+        <thead>
+          <tr className="bg-gray-100 text-left text-sm font-semibold">
+            <th className="p-2">Name</th>
+            <th className="p-2">Instance ID</th>
+            <th className="p-2">Type</th>
+            <th className="p-2">AZ</th>
+            <th className="p-2">State</th>
+          </tr>
+        </thead>
+        <tbody>
+          {instances.map(inst => {
+            const name = inst.name || (inst.tags || []).find(tag => tag.Key === 'Name')?.Value || 'Unnamed';
+            const isExpanded = expandedId === inst.id;
+            return (
+              <React.Fragment key={inst.id}>
+                <tr 
+                  className="border-b hover:bg-gray-50 cursor-pointer"
+                  onClick={() => setExpandedId(expandedId === inst.id ? null : inst.id)}
+                >
+                  <td className="p-2">{name}</td>
+                  <td className="p-2">{inst.id}</td>
+                  <td className="p-2">{inst.type}</td>
+                  <td className="p-2">{inst.az}</td>
+                  <td className="p-2 capitalize">{inst.state}</td>
+                </tr>
+                {isExpanded && (
+                  <tr className="bg-gray-50 border-b">
+                    <td colSpan="5" className="p-4">
+                      <div className="space-y-2">
+                        <p><strong>Volumes:</strong> {inst.volumes.join(', ')}</p>
+                        <p><strong>Role:</strong> {inst.role}</p>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {inst.state === 'stopped' && (
+                            <button
+                              onClick={() => handleAction(inst.id, 'start')}
+                              className="bg-green-500 text-white px-3 py-1 rounded"
+                            >
+                              Start
+                            </button>
+                          )}
+                          {inst.state === 'running' && (
+                            <button
+                              onClick={() => handleAction(inst.id, 'stop')}
+                              className="bg-yellow-500 text-white px-3 py-1 rounded"
+                            >
+                              Stop
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleResize(inst.id, inst.type)}
+                            className="bg-blue-500 text-white px-3 py-1 rounded"
+                          >
+                            Resize
+                          </button>
+                          <button
+                            onClick={() => handleTerminate(inst.id)}
+                            className="bg-red-600 text-white px-3 py-1 rounded"
+                          >
+                            Terminate
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default EC2Dashboard;

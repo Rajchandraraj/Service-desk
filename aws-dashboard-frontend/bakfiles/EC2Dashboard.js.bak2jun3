@@ -1,0 +1,94 @@
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+function EC2Dashboard({ region }) {
+  const [instances, setInstances] = useState([]);
+  const [selected, setSelected] = useState(null);
+
+  useEffect(() => {
+    if (!region) return;
+
+    axios.get(`http://65.0.7.159:5000/instances/${region}`)
+      .then(res => {
+        if (Array.isArray(res.data)) {
+          setInstances(res.data);
+          setSelected(null); // clear selected when region changes
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching instances:', err);
+        setInstances([]);
+      });
+  }, [region]);
+
+  const handleResize = (id, type) => {
+    const newType = prompt("Enter new instance type:", type);
+    if (newType) {
+      axios.post(`http://65.0.7.159:5000/instance/${region}/${id}/resize`, {
+        instance_type: newType
+      }).then(() => alert('Resize requested.'));
+    }
+  };
+
+  const handleTerminate = id => {
+    if (window.confirm("Are you sure to terminate this instance?")) {
+      axios.post(`http://65.0.7.159:5000/instance/${region}/${id}/terminate`)
+        .then(() => alert('Instance terminated.'));
+    }
+  };
+
+  return (
+    <div className="mt-4">
+      <h2 className="text-xl font-bold mb-2">EC2 Instances in <span className="text-blue-600">{region}</span></h2>
+
+      {instances.length === 0 ? (
+        <p className="text-gray-500">No instances found.</p>
+      ) : (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white p-4 rounded shadow">
+            <h3 className="font-semibold mb-2">Instances</h3>
+            <ul>
+              {instances.map(inst => (
+                <li key={inst.id} className="mb-2">
+                  <button
+                    onClick={() => setSelected(inst)}
+                    className="text-blue-500 hover:underline"
+                  >
+                    {inst.name || inst.id}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {selected && (
+            <div className="bg-white p-4 rounded shadow">
+              <h3 className="font-semibold mb-2">Instance Details</h3>
+              <p><b>ID:</b> {selected.id}</p>
+              <p><b>Name:</b> {selected.name || 'N/A'}</p>
+              <p><b>Type:</b> {selected.type}</p>
+              <p><b>AZ:</b> {selected.az}</p>
+              <p><b>Volumes:</b> {selected.volumes?.join(', ') || 'None'}</p>
+              <p><b>Role:</b> {selected.role}</p>
+
+              <button
+                onClick={() => handleResize(selected.id, selected.type)}
+                className="bg-yellow-500 text-white px-4 py-1 rounded mt-2"
+              >
+                Resize
+              </button>
+              <button
+                onClick={() => handleTerminate(selected.id)}
+                className="bg-red-600 text-white px-4 py-1 rounded ml-2 mt-2"
+              >
+                Decommission
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default EC2Dashboard;
