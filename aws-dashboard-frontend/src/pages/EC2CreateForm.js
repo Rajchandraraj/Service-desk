@@ -1,70 +1,146 @@
-// pages/EC2CreateForm.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 function EC2CreateForm({ region }) {
-  const [amiId, setAmiId] = useState('');
-  const [instanceType, setInstanceType] = useState('t2.micro');
-  const [keyName, setKeyName] = useState('');
-  const [securityGroups, setSecurityGroups] = useState('');
-  const [subnetId, setSubnetId] = useState('');
-  const [tags, setTags] = useState([{ Key: '', Value: '' }]);
-  const [message, setMessage] = useState('');
+  const [vpcs, setVpcs] = useState([]);
+  const [subnets, setSubnets] = useState([]);
+  const [securityGroups, setSecurityGroups] = useState([]);
+  const [keyPairs, setKeyPairs] = useState([]);
+  const [iamProfiles, setIamProfiles] = useState([]);
 
-  const addTag = () => setTags([...tags, { Key: '', Value: '' }]);
+  const [formData, setFormData] = useState({
+    name: '',
+    ami: '',
+    instance_type: '',
+    vpc_id: '',
+    subnet_id: '',
+    security_group_id: '',
+    key_name: '',
+    iam_instance_profile: ''
+  });
 
-  const updateTag = (index, field, value) => {
-    const newTags = [...tags];
-    newTags[index][field] = value;
-    setTags(newTags);
-  };
+  const [message, setMessage] = useState(null);
+  const [createdInstance, setCreatedInstance] = useState(null);
 
-  const handleSubmit = async () => {
-    const payload = {
-      region,
-      ami_id: amiId,
-      instance_type: instanceType,
-      key_name: keyName,
-      security_groups: securityGroups.split(',').map(s => s.trim()),
-      subnet_id: subnetId,
-      tags: tags.filter(tag => tag.Key && tag.Value),
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const [vpcRes, keyPairRes, iamRes] = await Promise.all([
+          axios.get(`/ec2/vpcs/${region}`),
+          axios.get(`/ec2/key-pairs/${region}`),
+          axios.get(`/ec2/iam-profiles/${region}`),
+        ]);
+        setVpcs(vpcRes.data);
+        setKeyPairs(keyPairRes.data);
+        setIamProfiles(iamRes.data);
+      } catch (err) {
+        console.error('Failed to load initial EC2 options', err);
+      }
     };
+    fetchInitialData();
+  }, [region]);
+
+  const handleVpcChange = async (e) => {
+    const vpc_id = e.target.value;
+    setFormData({ ...formData, vpc_id, subnet_id: '', security_group_id: '' });
+
+    if (!vpc_id) return;
 
     try {
-      const res = await fetch('http://localhost:5000/create-ec2', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      setMessage(data.message);
+      const [subnetRes, sgRes] = await Promise.all([
+        axios.get(`/ec2/subnets/${region}/${vpc_id}`),
+        axios.get(`/ec2/security-groups/${region}/${vpc_id}`),
+      ]);
+      setSubnets(subnetRes.data);
+      setSecurityGroups(sgRes.data);
     } catch (err) {
-      setMessage('Failed to create instance');
+      console.error('Failed to load subnets or SGs for selected VPC', err);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage(null);
+    setCreatedInstance(null);
+
+    try {
+      const res = await axios.post('/create-ec2', { ...formData, region });
+      setMessage({ type: 'success', text: res.data.message });
+      setCreatedInstance({
+        id: res.data.instance_id,
+        public_ip: res.data.public_ip,
+      });
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || 'EC2 creation failed';
+      setMessage({ type: 'error', text: errorMsg });
     }
   };
 
   return (
-    <div className="bg-white p-4 rounded shadow-md">
+    <div className="max-w-xl mx-auto p-4 bg-white border rounded shadow mt-6">
       <h2 className="text-xl font-bold mb-4">Create EC2 Instance</h2>
 
-      <input className="border p-2 w-full mb-2" placeholder="AMI ID" value={amiId} onChange={e => setAmiId(e.target.value)} />
-      <input className="border p-2 w-full mb-2" placeholder="Instance Type" value={instanceType} onChange={e => setInstanceType(e.target.value)} />
-      <input className="border p-2 w-full mb-2" placeholder="Key Name (optional)" value={keyName} onChange={e => setKeyName(e.target.value)} />
-      <input className="border p-2 w-full mb-2" placeholder="Security Group IDs (comma-separated)" value={securityGroups} onChange={e => setSecurityGroups(e.target.value)} />
-      <input className="border p-2 w-full mb-2" placeholder="Subnet ID" value={subnetId} onChange={e => setSubnetId(e.target.value)} />
+      {message && (
+        <div className={`p-2 rounded mb-4 ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+          {message.text}
+        </div>
+      )}
 
-      <div className="mb-2">
-        <p className="font-semibold">Tags:</p>
-        {tags.map((tag, i) => (
-          <div key={i} className="flex gap-2 mb-1">
-            <input className="border p-1 w-1/2" placeholder="Key" value={tag.Key} onChange={e => updateTag(i, 'Key', e.target.value)} />
-            <input className="border p-1 w-1/2" placeholder="Value" value={tag.Value} onChange={e => updateTag(i, 'Value', e.target.value)} />
-          </div>
-        ))}
-        <button className="bg-gray-300 px-2 py-1 rounded" onClick={addTag}>Add Tag</button>
-      </div>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <input name="name" type="text" placeholder="Instance Name" value={formData.name} onChange={handleChange} required className="w-full border px-3 py-2 rounded" />
+        <input name="ami" type="text" placeholder="AMI ID (e.g. ami-0abcdef...)" value={formData.ami} onChange={handleChange} required className="w-full border px-3 py-2 rounded" />
+        <input name="instance_type" type="text" placeholder="Instance Type (e.g. t2.micro)" value={formData.instance_type} onChange={handleChange} required className="w-full border px-3 py-2 rounded" />
 
-      <button className="bg-green-600 text-white px-4 py-2 mt-3 rounded" onClick={handleSubmit}>Create Instance</button>
-      {message && <p className="mt-4 text-blue-700">{message}</p>}
+        <select name="vpc_id" value={formData.vpc_id} onChange={handleVpcChange} required className="w-full border px-3 py-2 rounded">
+          <option value="">Select VPC</option>
+          {vpcs.map(vpc => (
+            <option key={vpc.id} value={vpc.id}>{vpc.id} ({vpc.cidr})</option>
+          ))}
+        </select>
+
+        <select name="subnet_id" value={formData.subnet_id} onChange={handleChange} required className="w-full border px-3 py-2 rounded">
+          <option value="">Select Subnet</option>
+          {subnets.map(subnet => (
+            <option key={subnet.id} value={subnet.id}>{subnet.id} ({subnet.az}, {subnet.cidr})</option>
+          ))}
+        </select>
+
+        <select name="security_group_id" value={formData.security_group_id} onChange={handleChange} required className="w-full border px-3 py-2 rounded">
+          <option value="">Select Security Group</option>
+          {securityGroups.map(sg => (
+            <option key={sg.id} value={sg.id}>{sg.name} ({sg.id})</option>
+          ))}
+        </select>
+
+        <select name="key_name" value={formData.key_name} onChange={handleChange} required className="w-full border px-3 py-2 rounded">
+          <option value="">Select Key Pair</option>
+          {keyPairs.map(kp => (
+            <option key={kp.name} value={kp.name}>{kp.name}</option>
+          ))}
+        </select>
+
+        <select name="iam_instance_profile" value={formData.iam_instance_profile} onChange={handleChange} className="w-full border px-3 py-2 rounded">
+          <option value="">Select IAM Profile (optional)</option>
+          {iamProfiles.map(profile => (
+            <option key={profile.name} value={profile.name}>{profile.name}</option>
+          ))}
+        </select>
+
+        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Create Instance</button>
+      </form>
+
+      {createdInstance && (
+        <div className="mt-6 bg-gray-100 p-4 rounded">
+          <h3 className="font-semibold mb-2">Instance Created:</h3>
+          <p><strong>ID:</strong> {createdInstance.id}</p>
+          <p><strong>Public IP:</strong> {createdInstance.public_ip || 'Pending'}</p>
+        </div>
+      )}
     </div>
   );
 }

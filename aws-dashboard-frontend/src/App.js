@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
 import EC2Dashboard from './pages/EC2Dashboard.js';
 import MonitoringDashboard from './pages/MonitoringDashboard.js';
-import StandaloneAutomation from './pages/standaloneautomation.js';
-import S3CreateForm from './pages/S3CreateForm.js'; // import new form
+import S3CreateForm from './pages/S3CreateForm.js';
 import EC2CreateForm from './pages/EC2CreateForm.js';
+import StandaloneAutomation from './pages/standaloneautomation.js';
+import VPCCreateForm from './pages/VPCCreateForm.js';
+import ECSCreateForm from './pages/ECSCreateForm.js';
 
-// ... rest of your code
+function Placeholder({ title }) {
+  return (
+    <div className="mt-4 text-center">
+      <h2 className="text-2xl font-bold">{title}</h2>
+      <p className="text-gray-500">Page is under construction</p>
+    </div>
+  );
+}
 
 function App() {
   const [activeTab, setActiveTab] = useState('Resource management');
@@ -37,10 +46,50 @@ function App() {
         ))}
       </nav>
 
+      {/* Monitoring Tab */}
       {activeTab === 'Monitoring' && <MonitoringDashboard region={region} />}
-      {activeTab === 'Resource creation' && <Placeholder title="Resource Creation" />}
-      {activeTab === 'Standalone Automation' && <Placeholder title="Standalone Automation" />}
 
+      {/* Resource Creation Tab */}
+      {activeTab === 'Resource creation' && (
+        <div className="mt-4">
+          <div className="mb-4">
+            <label className="font-medium mr-2">Region:</label>
+            <select
+              value={region}
+              onChange={e => setRegion(e.target.value)}
+              className="border p-1 rounded"
+            >
+              <option value="us-east-1">us-east-1</option>
+              <option value="us-west-2">us-west-2</option>
+              <option value="ap-south-1">ap-south-1</option>
+            </select>
+          </div>
+
+          <div className="mb-4">
+            <label className="font-medium mr-2">Select Service:</label>
+            <select
+              value={createService}
+              onChange={e => setCreateService(e.target.value)}
+              className="border p-1 rounded"
+            >
+              <option value="S3">S3</option>
+              <option value="EC2">EC2</option>
+              <option value="VPC">VPC</option>
+              <option value="ECS">ECS</option>
+            </select>
+          </div>
+
+          {createService === 'S3' && <S3CreateForm region={region} />}
+          {createService === 'EC2' && <EC2CreateForm region={region} />}
+          {createService === 'VPC' && <VPCCreateForm region={region} />}
+          {createService === 'ECS' && <ECSCreateForm region={region} />}
+        </div>
+      )}
+
+      {/* Standalone Automation Tab */}
+      {activeTab === 'Standalone Automation' && <StandaloneAutomation />}
+
+      {/* Resource Management Tab */}
       {activeTab === 'Resource management' && (
         <div className="mt-4">
           <div className="mb-4">
