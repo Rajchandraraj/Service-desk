@@ -2,11 +2,15 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import boto3
 import datetime
+import logging
 
 app = Flask(__name__)
 CORS(app)
 
-# Assumes default AWS creds or IAM role
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 def get_ec2_client(account_region='us-east-1'):
     return boto3.client('ec2', region_name=account_region)
 
@@ -15,44 +19,273 @@ def get_cloudwatch_client(account_region='us-east-1'):
 
 @app.route('/instances/<region>', methods=['GET'])
 def list_instances(region):
-    ec2 = get_ec2_client(region)
-    instances = ec2.describe_instances()
-    output = []
+    try:
+        ec2 = get_ec2_client(region)
+        instances = ec2.describe_instances()
+        output = []
 
-    for res in instances['Reservations']:
-        for inst in res['Instances']:
-            cpu = None  # removed from list_instances for performance; fetched separately
-            name = next((tag['Value'] for tag in inst.get('Tags', []) if tag['Key'] == 'Name'), None)
+        for res in instances['Reservations']:
+            for inst in res['Instances']:
+                cpu = None  # removed from list_instances for performance; fetched separately
+                name = next((tag['Value'] for tag in inst.get('Tags', []) if tag['Key'] == 'Name'), None)
+                
+                # Get IP addresses
+                public_ip = inst.get('PublicIpAddress', None)
+                private_ip = inst.get('PrivateIpAddress', None)
+                
+                output.append({
+                    'id': inst['InstanceId'],
+                    'name': name,
+                    'type': inst['InstanceType'],
+                    'state': inst['State']['Name'],
+                    'az': inst['Placement']['AvailabilityZone'],
+                    'volumes': [v['Ebs']['VolumeId'] for v in inst.get('BlockDeviceMappings', [])],
+                    'tags': inst.get('Tags', []),
+                    'role': inst.get('IamInstanceProfile', {}).get('Arn', 'None'),
+                    'cpu': cpu,
+                    'public_ip': public_ip,
+                    'private_ip': private_ip,
+                })
+        
+        logger.info(f"Successfully retrieved {len(output)} instances from region {region}")
+        return jsonify(output)
+        
+    except Exception as e:
+        error_str = str(e)
+        logger.error(f"Error in list_instances: {error_str}")
+        
+        # Handle specific AWS errors
+        if 'RequestExpired' in error_str:
+            return jsonify({
+                'error': 'AWS session has expired',
+                'message': 'Please refresh your AWS credentials and try again',
+                'error_code': 'SESSION_EXPIRED',
+                'suggestion': 'Your temporary AWS session tokens have expired. Please get new credentials.'
+            }), 401
+        elif 'NoCredentialsError' in error_str:
+            return jsonify({
+                'error': 'No AWS credentials found',
+                'message': 'Please configure your AWS credentials',
+                'error_code': 'NO_CREDENTIALS'
+            }), 401
+        elif 'UnauthorizedOperation' in error_str:
+            return jsonify({
+                'error': 'Insufficient permissions',
+                'message': 'You do not have permission to describe instances',
+                'error_code': 'UNAUTHORIZED'
+            }), 403
+        else:
+            return jsonify({
+                'error': 'Failed to retrieve instances',
+                'message': error_str,
+                'error_code': 'UNKNOWN_ERROR'
+            }), 500
+
+@app.route('/instance/<region>/<instance_id>', methods=['GET'])
+def get_instance_details(region, instance_id):
+    """Get detailed information about a specific instance"""
+    try:
+        ec2 = get_ec2_client(region)
+        response = ec2.describe_instances(InstanceIds=[instance_id])
+        
+        if not response['Reservations']:
+            return jsonify({'error': 'Instance not found'}), 404
             
-            # Get IP addresses
-            public_ip = inst.get('PublicIpAddress', None)
-            private_ip = inst.get('PrivateIpAddress', None)
+        inst = response['Reservations'][0]['Instances'][0]
+        name = next((tag['Value'] for tag in inst.get('Tags', []) if tag['Key'] == 'Name'), None)
+        
+        # Get IP addresses
+        public_ip = inst.get('PublicIpAddress', None)
+        private_ip = inst.get('PrivateIpAddress', None)
+        
+        instance_details = {
+            'id': inst['InstanceId'],
+            'name': name,
+            'type': inst['InstanceType'],
+            'state': inst['State']['Name'],
+            'az': inst['Placement']['AvailabilityZone'],
+            'volumes': [v['Ebs']['VolumeId'] for v in inst.get('BlockDeviceMappings', [])],
+            'tags': inst.get('Tags', []),
+            'role': inst.get('IamInstanceProfile', {}).get('Arn', 'None'),
+            'public_ip': public_ip,
+            'private_ip': private_ip,
+            'launch_time': inst.get('LaunchTime').isoformat() if inst.get('LaunchTime') else None,
+            'vpc_id': inst.get('VpcId', None),
+            'subnet_id': inst.get('SubnetId', None),
+            'security_groups': [sg['GroupName'] for sg in inst.get('SecurityGroups', [])],
+            'key_name': inst.get('KeyName', None),
+            'architecture': inst.get('Architecture', None),
+            'platform': inst.get('Platform', 'linux'),
+            'monitoring': inst.get('Monitoring', {}).get('State', 'disabled')
+        }
+        
+        return jsonify(instance_details)
+        
+    except Exception as e:
+        error_str = str(e)
+        logger.error(f"Error fetching instance details: {error_str}")
+        
+        if 'InvalidInstanceID.NotFound' in error_str:
+            return jsonify({'error': 'Instance not found'}), 404
+        elif 'RequestExpired' in error_str:
+            return jsonify({
+                'error': 'AWS session has expired',
+                'message': 'Please refresh your AWS credentials and try again'
+            }), 401
+        else:
+            return jsonify({'error': error_str}), 500
+
+@app.route('/instance/<region>/<instance_id>/private-ip', methods=['GET'])
+def get_instance_private_ip(region, instance_id):
+    """Get the private IP address of a specific instance for installation purposes"""
+    try:
+        ec2 = get_ec2_client(region)
+        response = ec2.describe_instances(InstanceIds=[instance_id])
+        
+        if not response['Reservations']:
+            return jsonify({'error': 'Instance not found'}), 404
             
-            output.append({
-                'id': inst['InstanceId'],
-                'name': name,
-                'type': inst['InstanceType'],
-                'state': inst['State']['Name'],
-                'az': inst['Placement']['AvailabilityZone'],
-                'volumes': [v['Ebs']['VolumeId'] for v in inst.get('BlockDeviceMappings', [])],
-                'tags': inst.get('Tags', []),
-                'role': inst.get('IamInstanceProfile', {}).get('Arn', 'None'),
-                'cpu': cpu,
-                'public_ip': public_ip,
-                'private_ip': private_ip,
-            })
-    return jsonify(output)
+        inst = response['Reservations'][0]['Instances'][0]
+        private_ip = inst.get('PrivateIpAddress', None)
+        public_ip = inst.get('PublicIpAddress', None)
+        state = inst['State']['Name']
+        
+        if not private_ip:
+            return jsonify({
+                'error': 'Private IP not available for this instance',
+                'instance_id': instance_id,
+                'state': state
+            }), 400
+            
+        return jsonify({
+            'instance_id': instance_id,
+            'private_ip': private_ip,
+            'public_ip': public_ip,
+            'state': state,
+            'ready_for_installation': state == 'running' and private_ip is not None
+        })
+        
+    except Exception as e:
+        error_str = str(e)
+        logger.error(f"Error fetching private IP for instance {instance_id}: {error_str}")
+        
+        if 'InvalidInstanceID.NotFound' in error_str:
+            return jsonify({'error': 'Instance not found'}), 404
+        else:
+            return jsonify({'error': error_str}), 500
+
+@app.route('/instance/<region>/<instance_id>/installation-info', methods=['GET'])
+def get_installation_info(region, instance_id):
+    """Get comprehensive installation information for an instance"""
+    try:
+        ec2 = get_ec2_client(region)
+        response = ec2.describe_instances(InstanceIds=[instance_id])
+        
+        if not response['Reservations']:
+            return jsonify({'error': 'Instance not found'}), 404
+            
+        inst = response['Reservations'][0]['Instances'][0]
+        name = next((tag['Value'] for tag in inst.get('Tags', []) if tag['Key'] == 'Name'), None)
+        private_ip = inst.get('PrivateIpAddress', None)
+        public_ip = inst.get('PublicIpAddress', None)
+        state = inst['State']['Name']
+        key_name = inst.get('KeyName', None)
+        platform = inst.get('Platform', 'linux')
+        
+        # Determine if instance is ready for installation
+        ready_for_installation = (
+            state == 'running' and 
+            private_ip is not None
+        )
+        
+        # Installation readiness checks
+        checks = {
+            'instance_running': state == 'running',
+            'private_ip_available': private_ip is not None,
+            'ssh_key_assigned': key_name is not None,
+            'linux_platform': platform != 'windows'
+        }
+        
+        return jsonify({
+            'instance_id': instance_id,
+            'name': name,
+            'private_ip': private_ip,
+            'public_ip': public_ip,
+            'state': state,
+            'key_name': key_name,
+            'platform': platform,
+            'ready_for_installation': ready_for_installation,
+            'installation_checks': checks,
+            'recommended_target_ip': private_ip,  # Prefer private IP for installation
+            'notes': {
+                'ssh_access': 'Ensure SSH access is configured for the target IP',
+                'security_groups': 'Verify security groups allow SSH (port 22)',
+                'ansible_requirements': 'Target must have Python installed'
+            }
+        })
+        
+    except Exception as e:
+        error_str = str(e)
+        logger.error(f"Error fetching installation info for instance {instance_id}: {error_str}")
+        
+        if 'InvalidInstanceID.NotFound' in error_str:
+            return jsonify({'error': 'Instance not found'}), 404
+        else:
+            return jsonify({'error': error_str}), 500
+
+@app.route('/instances/<region>/installation-ready', methods=['GET'])
+def get_installation_ready_instances(region):
+    """Get all instances that are ready for software installation"""
+    try:
+        ec2 = get_ec2_client(region)
+        instances = ec2.describe_instances(
+            Filters=[
+                {'Name': 'instance-state-name', 'Values': ['running']}
+            ]
+        )
+        
+        ready_instances = []
+        
+        for res in instances['Reservations']:
+            for inst in res['Instances']:
+                private_ip = inst.get('PrivateIpAddress', None)
+                public_ip = inst.get('PublicIpAddress', None)
+                key_name = inst.get('KeyName', None)
+                platform = inst.get('Platform', 'linux')
+                name = next((tag['Value'] for tag in inst.get('Tags', []) if tag['Key'] == 'Name'), None)
+                
+                if private_ip and platform != 'windows':  # Only Linux instances with private IP
+                    ready_instances.append({
+                        'id': inst['InstanceId'],
+                        'name': name,
+                        'private_ip': private_ip,
+                        'public_ip': public_ip,
+                        'key_name': key_name,
+                        'type': inst['InstanceType'],
+                        'az': inst['Placement']['AvailabilityZone']
+                    })
+        
+        return jsonify({
+            'ready_instances': ready_instances,
+            'count': len(ready_instances),
+            'region': region
+        })
+        
+    except Exception as e:
+        error_str = str(e)
+        logger.error(f"Error fetching installation-ready instances: {error_str}")
+        return jsonify({'error': error_str}), 500
 
 @app.route('/instance/<region>/<instance_id>/cpu', methods=['GET'])
 def get_cpu_utilization(region, instance_id):
     """Get CPU utilization for a specific instance"""
-    cloudwatch = get_cloudwatch_client(region)
-    
-    # Get CPU utilization for the last hour
-    end_time = datetime.datetime.utcnow()
-    start_time = end_time - datetime.timedelta(hours=1)
-    
     try:
+        cloudwatch = get_cloudwatch_client(region)
+        
+        # Get CPU utilization for the last hour
+        end_time = datetime.datetime.utcnow()
+        start_time = end_time - datetime.timedelta(hours=1)
+        
         response = cloudwatch.get_metric_statistics(
             Namespace='AWS/EC2',
             MetricName='CPUUtilization',
@@ -81,12 +314,12 @@ def get_cpu_utilization(region, instance_id):
 
 @app.route('/instance/<region>/<instance_id>/resize', methods=['POST'])
 def resize_instance(region, instance_id):
-    data = request.json
-    new_type = data['instance_type']
-
-    ec2 = get_ec2_client(region)
-    
     try:
+        data = request.json
+        new_type = data['instance_type']
+
+        ec2 = get_ec2_client(region)
+        
         # Check current state
         response = ec2.describe_instances(InstanceIds=[instance_id])
         current_state = response['Reservations'][0]['Instances'][0]['State']['Name']
@@ -105,8 +338,8 @@ def resize_instance(region, instance_id):
 
 @app.route('/instance/<region>/<instance_id>/terminate', methods=['POST'])
 def terminate_instance(region, instance_id):
-    ec2 = get_ec2_client(region)
     try:
+        ec2 = get_ec2_client(region)
         ec2.terminate_instances(InstanceIds=[instance_id])
         return jsonify({'status': 'success', 'message': f'Terminated {instance_id}'})
     except Exception as e:
@@ -114,8 +347,8 @@ def terminate_instance(region, instance_id):
 
 @app.route('/instance/<region>/<instance_id>/start', methods=['POST'])
 def start_instance(region, instance_id):
-    ec2 = get_ec2_client(region)
     try:
+        ec2 = get_ec2_client(region)
         ec2.start_instances(InstanceIds=[instance_id])
         return jsonify({'status': 'success', 'message': f'Started {instance_id}'})
     except Exception as e:
@@ -123,8 +356,8 @@ def start_instance(region, instance_id):
 
 @app.route('/instance/<region>/<instance_id>/stop', methods=['POST'])
 def stop_instance(region, instance_id):
-    ec2 = get_ec2_client(region)
     try:
+        ec2 = get_ec2_client(region)
         ec2.stop_instances(InstanceIds=[instance_id])
         return jsonify({'status': 'success', 'message': f'Stopped {instance_id}'})
     except Exception as e:
@@ -133,9 +366,9 @@ def stop_instance(region, instance_id):
 @app.route('/instances/<region>/stop_all', methods=['POST'])
 def stop_all_instances(region):
     """Stop all running instances in the region"""
-    ec2 = get_ec2_client(region)
-    
     try:
+        ec2 = get_ec2_client(region)
+        
         # Get all running instances
         instances = ec2.describe_instances(
             Filters=[
@@ -167,10 +400,25 @@ def stop_all_instances(region):
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
+    try:
+        # Test AWS connectivity
+        ec2 = get_ec2_client('us-east-1')
+        regions = ec2.describe_regions()
+        aws_connected = True
+        aws_message = f"Connected - {len(regions['Regions'])} regions available"
+    except Exception as e:
+        aws_connected = False
+        aws_message = f"AWS connection failed: {str(e)}"
+        
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.datetime.utcnow().isoformat(),
-        'service': 'EC2 Management API'
+        'service': 'EC2 Management API',
+        'version': '1.2.0',
+        'aws_connectivity': {
+            'connected': aws_connected,
+            'message': aws_message
+        }
     })
 
 @app.route('/regions', methods=['GET'])
@@ -190,5 +438,27 @@ def list_regions():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/ansible-api/health', methods=['GET'])
+def check_ansible_api():
+    """Proxy health check to Ansible API"""
+    try:
+        import requests
+        response = requests.get('http://43.204.109.213:8000/health', timeout=5)
+        return jsonify({
+            'ansible_api_status': 'healthy' if response.status_code == 200 else 'unhealthy',
+            'ansible_api_response': response.json() if response.status_code == 200 else None,
+            'timestamp': datetime.datetime.utcnow().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            'ansible_api_status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.datetime.utcnow().isoformat()
+        }), 500
+
 if __name__ == '__main__':
+    print("🚀 Starting EC2 Management API...")
+    print("📊 Health check: http://localhost:5000/health")
+    print("🔧 Installation endpoints ready")
+    
     app.run(host='0.0.0.0', port=5000, debug=True)

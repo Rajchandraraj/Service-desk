@@ -1,36 +1,193 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-// Separate Install component - uses inline expansion like VM details
+// Configuration for Ansible API
+const ANSIBLE_API_BASE = 'http://43.204.109.213:8000';
+
+// Installation Service Functions
+class InstallationService {
+  static async getInstancePrivateIP(instanceId, region, BACKEND_HOST) {
+    try {
+      const response = await axios.get(`${BACKEND_HOST}/instance/${region}/${instanceId}/installation-info`);
+      return response.data.private_ip;
+    } catch (error) {
+      console.error('Error fetching private IP:', error);
+      throw new Error('Failed to fetch instance private IP');
+    }
+  }
+
+  static async installService(privateIp, service, version) {
+    try {
+      const url = `${ANSIBLE_API_BASE}/install/${privateIp}/${service}/${version}`;
+      console.log(`Installing ${service} v${version} on ${privateIp}`);
+      console.log(`API URL: ${url}`);
+      
+      // Add timeout and better error handling
+      const response = await axios.get(url, {
+        timeout: 30000, // 30 second timeout
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Installation error:', error);
+      if (error.code === 'ECONNABORTED') {
+        throw new Error('Installation request timed out');
+      } else if (error.response) {
+        throw new Error(error.response.data?.error || `Server error: ${error.response.status}`);
+      } else if (error.request) {
+        throw new Error('Cannot connect to Ansible API - please check if the service is running');
+      } else {
+        throw new Error('Installation failed: ' + error.message);
+      }
+    }
+  }
+
+  static async getDeploymentStatus(deploymentId) {
+    try {
+      const response = await axios.get(`${ANSIBLE_API_BASE}/status/${deploymentId}`, {
+        timeout: 10000,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error checking deployment status:', error);
+      throw new Error('Failed to check deployment status');
+    }
+  }
+
+  static async checkAnsibleAPIHealth() {
+    try {
+      const response = await axios.get(`${ANSIBLE_API_BASE}/health`, {
+        timeout: 5000,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Ansible API health check failed:', error);
+      if (error.code === 'ECONNABORTED') {
+        return { status: 'unhealthy', error: 'Connection timeout' };
+      } else if (error.response) {
+        return { status: 'unhealthy', error: `HTTP ${error.response.status}` };
+      } else if (error.request) {
+        return { status: 'unhealthy', error: 'Cannot connect to API' };
+      } else {
+        return { status: 'unhealthy', error: error.message };
+      }
+    }
+  }
+}
+
+// Perfect Install Section Component
 function InstallSection({ instanceId, region, onInstallComplete }) {
   const [showInstallOptions, setShowInstallOptions] = useState(false);
   const [selectedService, setSelectedService] = useState('');
   const [showVersions, setShowVersions] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [deploymentId, setDeploymentId] = useState(null);
+  const [deploymentStatus, setDeploymentStatus] = useState(null);
+  const [privateIp, setPrivateIp] = useState(null);
+  const [apiHealth, setApiHealth] = useState(null);
+  const [error, setError] = useState(null);
 
   // Use environment variable for backend host
   const BACKEND_HOST = process.env.REACT_APP_BACKEND_HOST || 'http://localhost:5000';
 
   const services = [
-    'apache', 'keys', 'mongo', 'node', 'elasticsearch', 
+    'apache', 'mongo', 'node', 'elasticsearch', 
     'mariadb', 'nginx', 'npm', 'solr'
   ];
 
-  // Service versions (you can customize these)
+  // Service versions updated to match Ansible API
   const serviceVersions = {
-    apache: ['2.4.57', '2.4.56', '2.4.55'],
-    keys: ['1.0.0', '1.1.0', '1.2.0'],
-    mongo: ['7.0', '6.0', '5.0'],
-    node: ['20.9.0', '18.18.2', '16.20.2'],
-    elasticsearch: ['8.11.0', '8.10.4', '7.17.15'],
-    mariadb: ['10.11.6', '10.10.7', '10.6.16'],
-    nginx: ['1.25.3', '1.24.0', '1.22.1'],
-    npm: ['10.2.3', '9.8.1', '8.19.4'],
-    solr: ['9.4.0', '9.3.0', '8.11.2']
+    apache: ['latest', '2.4'],
+    mongo: ['latest',  '7.0', '6.0', '5.0'],
+    node: ['latest',  '20.x', '18.x', '16.x'],
+    elasticsearch: ['latest', '8.11', '7.17', '6.8'],
+    mariadb: ['latest', '10.6', '10.5'],
+    nginx: ['latest', '1.22', '1.20'],
+    npm: ['latest', 'lastest'],
+    solr: ['latest', '9.4', '9.3']
   };
 
+  // Initialize component
+  useEffect(() => {
+    const initializeComponent = async () => {
+      try {
+        setError(null);
+        
+        // Check Ansible API health first
+        console.log('Checking Ansible API health...');
+        const health = await InstallationService.checkAnsibleAPIHealth();
+        setApiHealth(health);
+        console.log('API Health:', health);
+
+        if (health.status === 'healthy') {
+          // Get instance private IP
+          console.log('Fetching instance private IP...');
+          const ip = await InstallationService.getInstancePrivateIP(instanceId, region, BACKEND_HOST);
+          setPrivateIp(ip);
+          console.log('Private IP:', ip);
+        }
+        
+        setShowInstallOptions(true);
+      } catch (error) {
+        console.error('Failed to initialize install component:', error);
+        setError(error.message);
+        setApiHealth({ status: 'unhealthy', error: error.message });
+        setShowInstallOptions(true); // Still show options but with error state
+      }
+    };
+
+    initializeComponent();
+  }, [instanceId, region, BACKEND_HOST]);
+
+  // Poll deployment status if we have a deployment ID
+  useEffect(() => {
+    if (deploymentId) {
+      const pollStatus = setInterval(async () => {
+        try {
+          const status = await InstallationService.getDeploymentStatus(deploymentId);
+          setDeploymentStatus(status);
+          
+          if (status.status === 'completed' || status.status === 'failed' || status.status === 'error') {
+            clearInterval(pollStatus);
+            setLoading(false);
+            
+            if (status.status === 'completed') {
+              alert(`✅ ${selectedService} ${selectedVersion} installed successfully on ${privateIp}!`);
+              onInstallComplete();
+              resetInstall();
+            } else {
+              const errorMsg = status.error_output?.join('\n') || 'Unknown error';
+              alert(`❌ Installation failed:\n${errorMsg}`);
+              setError(`Installation failed: ${errorMsg}`);
+            }
+          }
+        } catch (error) {
+          console.error('Error polling deployment status:', error);
+          clearInterval(pollStatus);
+          setLoading(false);
+          setError('Failed to check deployment status');
+        }
+      }, 3000); // Poll every 3 seconds
+
+      return () => clearInterval(pollStatus);
+    }
+  }, [deploymentId, selectedService, selectedVersion, privateIp, onInstallComplete]);
+
   const handleServiceSelect = (service) => {
+    setError(null);
     setSelectedService(service);
     setShowVersions(true);
   };
@@ -41,23 +198,47 @@ function InstallSection({ instanceId, region, onInstallComplete }) {
     setShowConfirmation(true);
   };
 
-  const handleConfirmInstall = () => {
-    // Make the actual API call to install the service
-    console.log(`Installing ${selectedService} version ${selectedVersion} on instance ${instanceId}`);
-    
-    axios.post(`${BACKEND_HOST}/instance/${region}/${instanceId}/install`, {
-      service: selectedService,
-      version: selectedVersion
-    })
-    .then(() => {
-      alert(`${selectedService} ${selectedVersion} installation started successfully!`);
-      onInstallComplete();
-      resetInstall();
-    })
-    .catch(err => {
-      console.error('Installation error:', err);
-      alert(`Installation failed: ${err.response?.data?.message || err.message}`);
-    });
+  const handleConfirmInstall = async () => {
+    if (!privateIp) {
+      setError('Private IP not available. Cannot proceed with installation.');
+      return;
+    }
+
+    if (apiHealth?.status !== 'healthy') {
+      setError('Ansible API is not available. Cannot proceed with installation.');
+      return;
+    }
+
+    setLoading(true);
+    setShowConfirmation(false);
+    setError(null);
+
+    try {
+      console.log(`Installing ${selectedService} version ${selectedVersion} on ${privateIp}`);
+      
+      const result = await InstallationService.installService(privateIp, selectedService, selectedVersion);
+      
+      if (result.deployment_id) {
+        setDeploymentId(result.deployment_id);
+        setDeploymentStatus(result);
+        // Status polling will handle the rest
+      } else {
+        // Immediate completion
+        setLoading(false);
+        if (result.status === 'completed') {
+          alert(`✅ ${selectedService} ${selectedVersion} installation completed successfully!`);
+          onInstallComplete();
+          resetInstall();
+        } else {
+          const errorMsg = result.error_output?.join('\n') || result.message || 'Unknown error';
+          setError(`Installation failed: ${errorMsg}`);
+        }
+      }
+    } catch (error) {
+      setLoading(false);
+      console.error('Installation error:', error);
+      setError(error.message);
+    }
   };
 
   const resetInstall = () => {
@@ -66,11 +247,30 @@ function InstallSection({ instanceId, region, onInstallComplete }) {
     setShowConfirmation(false);
     setSelectedService('');
     setSelectedVersion('');
+    setDeploymentId(null);
+    setDeploymentStatus(null);
+    setLoading(false);
+    setError(null);
   };
 
   const goBackToServices = () => {
     setShowVersions(false);
     setSelectedService('');
+    setError(null);
+  };
+
+  const retryConnection = async () => {
+    setError(null);
+    const health = await InstallationService.checkAnsibleAPIHealth();
+    setApiHealth(health);
+    if (health.status === 'healthy') {
+      try {
+        const ip = await InstallationService.getInstancePrivateIP(instanceId, region, BACKEND_HOST);
+        setPrivateIp(ip);
+      } catch (error) {
+        setError(error.message);
+      }
+    }
   };
 
   // Auto-show install options when component mounts
@@ -80,18 +280,100 @@ function InstallSection({ instanceId, region, onInstallComplete }) {
 
   return (
     <div>
+      {/* Error Display */}
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded mb-3">
+          <div className="flex items-center justify-between">
+            <div className="text-red-700 text-sm">
+              <strong>⚠️ Error:</strong> {error}
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-500 hover:text-red-700"
+            >
+              ✕
+            </button>
+          </div>
+          {(error.includes('connect') || error.includes('timeout')) && (
+            <button
+              onClick={retryConnection}
+              className="mt-2 text-red-600 text-sm hover:text-red-800 underline"
+            >
+              🔄 Retry Connection
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded mb-3">
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+            <span className="text-blue-700">
+              🚀 Installing {selectedService} {selectedVersion} on {privateIp}...
+            </span>
+          </div>
+          {deploymentStatus && (
+            <div className="mt-2 text-sm text-blue-600">
+              <div>Status: <span className="font-semibold">{deploymentStatus.status}</span></div>
+              {deploymentStatus.deployment_id && (
+                <div className="text-xs text-gray-500">ID: {deploymentStatus.deployment_id}</div>
+              )}
+              {deploymentStatus.output && deploymentStatus.output.length > 0 && (
+                <div className="mt-1 text-xs bg-blue-100 p-2 rounded max-h-20 overflow-y-auto">
+                  <div className="font-semibold">Latest Output:</div>
+                  {deploymentStatus.output.slice(-3).map((line, idx) => (
+                    <div key={idx} className="text-gray-700">{line}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* API Health Warning */}
+      {apiHealth && apiHealth.status !== 'healthy' && !loading && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded mb-3">
+          <div className="text-red-700 text-sm">
+            <strong>🚨 Warning:</strong> Ansible API is not available ({apiHealth.error}). Installation may not work.
+          </div>
+          <button
+            onClick={retryConnection}
+            className="mt-2 text-red-600 text-sm hover:text-red-800 underline"
+          >
+            🔄 Retry Connection
+          </button>
+        </div>
+      )}
+
       {/* Install Options - Always visible when component is rendered */}
-      {showInstallOptions && (
+      {showInstallOptions && !loading && (
         <div className="p-3 bg-white border border-gray-200 rounded">
           {!selectedService && !showVersions && (
             <div>
+              {/* Show private IP info */}
+              {privateIp && (
+                <div className="mb-3 p-2 bg-green-50 rounded text-sm">
+                  <span className="text-green-700">
+                    🎯 Target: <strong>{privateIp}</strong> (SSH pre-configured)
+                  </span>
+                </div>
+              )}
+              
               <h4 className="font-semibold text-gray-700 mb-2">Select Service to Install:</h4>
               <div className="grid grid-cols-3 gap-2">
                 {services.map(service => (
                   <button
                     key={service}
                     onClick={() => handleServiceSelect(service)}
-                    className="bg-gray-100 hover:bg-blue-100 text-gray-700 px-3 py-2 rounded text-sm capitalize border hover:border-blue-300"
+                    disabled={!privateIp || apiHealth?.status !== 'healthy'}
+                    className={`px-3 py-2 rounded text-sm capitalize border transition-colors ${
+                      privateIp && apiHealth?.status === 'healthy'
+                        ? 'bg-gray-100 hover:bg-blue-100 text-gray-700 hover:border-blue-300'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200'
+                    }`}
                   >
                     {service}
                   </button>
@@ -145,7 +427,26 @@ function InstallSection({ instanceId, region, onInstallComplete }) {
       {showConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Confirm Installation</h3>
+            <h3 className="text-lg font-semibold mb-4">🚀 Confirm Installation</h3>
+            <div className="space-y-2 mb-6">
+              <p className="text-gray-600">
+                <strong>Service:</strong> {selectedService}
+              </p>
+              <p className="text-gray-600">
+                <strong>Version:</strong> {selectedVersion}
+              </p>
+              <p className="text-gray-600">
+                <strong>Target IP:</strong> {privateIp}
+              </p>
+              <p className="text-gray-600">
+                <strong>Instance:</strong> {instanceId}
+              </p>
+              <p className="text-gray-600">
+                <strong>API Status:</strong> <span className={apiHealth?.status === 'healthy' ? 'text-green-600' : 'text-red-600'}>
+                  {apiHealth?.status === 'healthy' ? '✅ Ready' : '❌ Not Ready'}
+                </span>
+              </p>
+            </div>
             <p className="text-gray-600 mb-6">
               Are you sure you want to install <strong>{selectedService}</strong> version <strong>{selectedVersion}</strong> on this instance?
             </p>
@@ -159,8 +460,9 @@ function InstallSection({ instanceId, region, onInstallComplete }) {
               <button
                 onClick={handleConfirmInstall}
                 className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+                disabled={!privateIp || apiHealth?.status !== 'healthy'}
               >
-                Install
+                🚀 Install
               </button>
             </div>
           </div>
@@ -170,16 +472,25 @@ function InstallSection({ instanceId, region, onInstallComplete }) {
   );
 }
 
+// Perfect EC2Dashboard Component
 function EC2Dashboard({ region = 'us-east-1' }) {
   const [instances, setInstances] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
   const [installExpandedId, setInstallExpandedId] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [apiHealth, setApiHealth] = useState(null);
 
   // Use environment variable for backend host
   const BACKEND_HOST = process.env.REACT_APP_BACKEND_HOST || 'http://localhost:5000';
 
   useEffect(() => {
+    // Check Ansible API health on component mount
+    const checkHealth = async () => {
+      const health = await InstallationService.checkAnsibleAPIHealth();
+      setApiHealth(health);
+    };
+    checkHealth();
+
     // Load instances from your API
     axios.get(`${BACKEND_HOST}/instances/${region}`)
       .then(res => {
@@ -271,7 +582,14 @@ function EC2Dashboard({ region = 'us-east-1' }) {
     <div className="mt-4 p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">EC2 Instances in {region}</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <span className={`px-2 py-1 rounded text-xs ${
+            apiHealth?.status === 'healthy' 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-red-100 text-red-800'
+          }`}>
+            {apiHealth?.status === 'healthy' ? '✅ Ansible API' : '❌ Ansible API'}
+          </span>
           <select 
             value={filter} 
             onChange={(e) => setFilter(e.target.value)} 
