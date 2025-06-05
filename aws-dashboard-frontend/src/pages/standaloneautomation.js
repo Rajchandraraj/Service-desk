@@ -8,14 +8,14 @@ function DataTable() {
   const itemsPerPage = 10;
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/data")
+    axios.get("http://43.204.109.213:5000/api/data")
       .then(response => setData(response.data))
       .catch(error => console.error("Error fetching data:", error));
   }, []);
 
   const handleDownload = async (key) => {
     try {
-      const response = await axios.get("http://localhost:5000/api/download-url", {
+      const response = await axios.get("http://43.204.109.213:5000/api/download-url", {
         params: { key }
       });
       const url = response.data.url;

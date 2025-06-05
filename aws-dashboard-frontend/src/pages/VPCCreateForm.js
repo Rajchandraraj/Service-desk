@@ -22,7 +22,7 @@ function VPCCreateForm({ region }) {
     setMessage('');
 
     try {
-      const res = await axios.post('http://localhost:5000/create-vpc', {
+      const res = await axios.post('http://43.204.109.213:5000/create-vpc', {
         ...form,
         region
       });

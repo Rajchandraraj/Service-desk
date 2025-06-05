@@ -26,7 +26,7 @@ function App() {
           {/* AWS */}
           <div>
             <button
-              onClick={() => redirectTo('http://localhost:3000')}
+              onClick={() => redirectTo('http://43.204.109.213:3000')}
               className="p-3 border border-gray-300 rounded-xl shadow-sm hover:shadow-md transition duration-200"
             >
               <img src="/aws-logo.png" alt="AWS" className="h-12 w-auto" />
@@ -37,7 +37,7 @@ function App() {
           {/* Azure */}
           <div>
             <button
-              onClick={() => redirectTo('http://localhost:5173')}
+              onClick={() => redirectTo('http://43.204.109.213:5173')}
               className="p-3 border border-gray-300 rounded-xl shadow-sm hover:shadow-md transition duration-200"
             >
               <img src="/azure-logo.png" alt="Azure" className="h-12 w-auto" />
