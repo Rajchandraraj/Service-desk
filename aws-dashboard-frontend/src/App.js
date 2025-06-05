@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import EC2Dashboard from './pages/EC2Dashboard.js';
 import MonitoringDashboard from './pages/MonitoringDashboard.js';
+import StandaloneAutomation from './pages/standaloneautomation.js';
 
 function Placeholder({ title }) {
   return (
@@ -42,7 +43,7 @@ function App() {
 
       {activeTab === 'Monitoring' && <MonitoringDashboard region={region} />}
       {activeTab === 'Resource creation' && <Placeholder title="Resource Creation" />}
-      {activeTab === 'Standalone Automation' && <Placeholder title="Standalone Automation" />}
+      {activeTab === 'Standalone Automation' && <StandaloneAutomation />}
 
       {activeTab === 'Resource management' && (
         <div className="mt-4">
