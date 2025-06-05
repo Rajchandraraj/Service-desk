@@ -2,6 +2,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import boto3
 import datetime
+import json
+from botocore.exceptions import ClientError
 
 app = Flask(__name__)
 CORS(app)
@@ -114,6 +116,33 @@ def get_instance_metrics(region, instance_id):
 
     metrics['CPUUtilization'] = fetch('CPUUtilization')
     return jsonify(metrics)
+
+with open("./db/data.json", "r") as f:
+    DATA = json.load(f)
+
+# AWS S3 setup (use IAM role or env vars in production)
+s3_client = boto3.client('s3')
+
+@app.route("/api/data", methods=["GET"])
+def get_data():
+    return jsonify(DATA)
+
+@app.route("/api/download-url", methods=["GET"])
+def get_presigned_url():
+    bucket_name = 'rapyder-automation-document'  # <-- Replace with your actual bucket name
+    object_key = request.args.get('key')
+
+    if not object_key:
+        return jsonify({'error': 'Missing S3 object key'}), 400
+
+    try:
+        url = s3_client.generate_presigned_url('get_object',
+            Params={'Bucket': bucket_name, 'Key': object_key},
+            ExpiresIn=30  # Link valid for 1 hour
+        )
+        return jsonify({'url': url})
+    except ClientError as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
