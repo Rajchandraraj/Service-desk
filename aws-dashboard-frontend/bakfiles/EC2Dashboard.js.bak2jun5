@@ -5,14 +5,14 @@ function EC2Dashboard({ region }) {
   const [instances, setInstances] = useState([]);
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/instances/${region}`)
+    axios.get(`http://43.204.109.213:5000/instances/${region}`)
       .then(res => {
         if (Array.isArray(res.data)) setInstances(res.data);
       });
   }, [region]);
 
   const handleAction = (id, action) => {
-    axios.post(`http://localhost:5000/instance/${region}/${id}/${action}`)
+    axios.post(`http://43.204.109.213:5000/instance/${region}/${id}/${action}`)
       .then(() => {
         alert(`Instance ${action} request sent.`);
         setInstances(prev => prev.map(inst => inst.id === id ? { ...inst, state: action === 'start' ? 'running' : 'stopped' } : inst));
@@ -64,7 +64,7 @@ function EC2Dashboard({ region }) {
                     onClick={() => {
                       const newType = prompt("Enter new instance type:", inst.type);
                       if (newType) {
-                        axios.post(`http://localhost:5000/instance/${region}/${inst.id}/resize`, {
+                        axios.post(`http://43.204.109.213:5000/instance/${region}/${inst.id}/resize`, {
                           instance_type: newType
                         }).then(() => alert('Resize requested.'));
                       }
@@ -76,7 +76,7 @@ function EC2Dashboard({ region }) {
                   <button
                     onClick={() => {
                       if (window.confirm("Are you sure to terminate this instance?")) {
-                        axios.post(`http://localhost:5000/instance/${region}/${inst.id}/terminate`)
+                        axios.post(`http://43.204.109.213:5000/instance/${region}/${inst.id}/terminate`)
                           .then(() => alert('Instance terminated.'));
                       }
                     }}

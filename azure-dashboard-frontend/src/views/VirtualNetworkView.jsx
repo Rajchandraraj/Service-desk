@@ -16,7 +16,7 @@ const VirtualNetworkView = ({
   useEffect(() => {
     const fetchVirtualNetworks = async () => {
       try {
-        const response = await fetch("http://localhost:3001/api/vnets");
+        const response = await fetch("http://43.204.109.213:3001/api/vnets");
         const data = await response.json();
         setVirtualNetworks(data);
       } catch (error) {
@@ -37,7 +37,7 @@ const VirtualNetworkView = ({
     const vnetName = selectedResource.name;
     
     // Send request to backend to add subnet
-    const response = await fetch(`http://localhost:3001/api/vnets/${vnetName}/subnets`, {
+    const response = await fetch(`http://43.204.109.213:3001/api/vnets/${vnetName}/subnets`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -63,7 +63,7 @@ const handleDeleteSubnet = async (subnetName) => {
     const vnetName = selectedResource.name;
 
     const response = await fetch(
-      `http://localhost:3001/api/vnets/${vnetName}/subnets/${subnetName}`,
+      `http://43.204.109.213:3001/api/vnets/${vnetName}/subnets/${subnetName}`,
       {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
@@ -103,7 +103,7 @@ const handleUpdateSubnet = async () => {
     const vnetName = selectedResource.name;
 
     const response = await fetch(
-      `http://localhost:3001/api/vnets/${vnetName}/subnets/${editingSubnet.name}`,
+      `http://43.204.109.213:3001/api/vnets/${vnetName}/subnets/${editingSubnet.name}`,
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
