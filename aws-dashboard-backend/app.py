@@ -90,6 +90,67 @@ def get_alarms(region):
         })
     return jsonify(alert_list)
 
+@app.route('/s3-buckets/<region>', methods=['GET'])
+def list_s3_buckets(region):
+    s3 = boto3.client('s3', region_name=region)
+    try:
+        buckets = s3.list_buckets()['Buckets']
+        # Optionally filter only buckets created in selected region
+        return jsonify([b['Name'] for b in buckets])
+    except Exception as e:
+        return jsonify([]), 500
+
+@app.route('/create-s3', methods=['POST'])
+def create_s3_bucket():
+    data = request.json
+    bucket_name = data.get('bucket_name')
+    region = data.get('region')
+    block_public_access = data.get('block_public_access', True)
+    versioning = data.get('versioning', False)
+    tags = data.get('tags', [])  # Expecting [{"Key": "env", "Value": "dev"}]
+    
+    if not bucket_name or not region:
+        return jsonify({'status': 'error', 'message': 'bucket_name and region are required'}), 400
+
+    s3 = boto3.client('s3', region_name=region)
+
+    try:
+        # Create bucket
+        create_bucket_config = {'LocationConstraint': region} if region != 'us-east-1' else {}
+        s3.create_bucket(Bucket=bucket_name, CreateBucketConfiguration=create_bucket_config)
+
+        # Block Public Access
+        if block_public_access:
+            s3.put_public_access_block(
+                Bucket=bucket_name,
+                PublicAccessBlockConfiguration={
+                    'BlockPublicAcls': True,
+                    'IgnorePublicAcls': True,
+                    'BlockPublicPolicy': True,
+                    'RestrictPublicBuckets': True
+                }
+            )
+
+        # Enable versioning
+        if versioning:
+            s3.put_bucket_versioning(
+                Bucket=bucket_name,
+                VersioningConfiguration={'Status': 'Enabled'}
+            )
+
+        # Add tags
+        if tags:
+            s3.put_bucket_tagging(
+                Bucket=bucket_name,
+                Tagging={'TagSet': tags}
+            )
+
+        return jsonify({'status': 'success', 'message': f'S3 bucket {bucket_name} created successfully'})
+    
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
 @app.route('/metrics/<region>/<instance_id>')
 def get_instance_metrics(region, instance_id):
     cw = get_cloudwatch_client(region)

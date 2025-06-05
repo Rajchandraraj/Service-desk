@@ -1,20 +1,16 @@
 import React, { useState } from 'react';
 import EC2Dashboard from './pages/EC2Dashboard.js';
 import MonitoringDashboard from './pages/MonitoringDashboard.js';
+import S3CreateForm from './pages/S3CreateForm.js'; // import new form
+import EC2CreateForm from './pages/EC2CreateForm.js';
 
-function Placeholder({ title }) {
-  return (
-    <div className="mt-4 text-center">
-      <h2 className="text-2xl font-bold">{title}</h2>
-      <p className="text-gray-500">Page is under construction</p>
-    </div>
-  );
-}
+// ... rest of your code
 
 function App() {
   const [activeTab, setActiveTab] = useState('Resource management');
   const [resourceTab, setResourceTab] = useState('EC2');
   const [region, setRegion] = useState('us-east-1');
+  const [createService, setCreateService] = useState('S3');
 
   return (
     <div className="p-4 font-sans">
@@ -41,7 +37,39 @@ function App() {
       </nav>
 
       {activeTab === 'Monitoring' && <MonitoringDashboard region={region} />}
-      {activeTab === 'Resource creation' && <Placeholder title="Resource Creation" />}
+      {activeTab === 'Resource creation' && (
+        <div className="mt-4">
+          <div className="mb-4">
+            <label className="font-medium mr-2">Region:</label>
+            <select
+              value={region}
+              onChange={e => setRegion(e.target.value)}
+              className="border p-1 rounded"
+            >
+              <option value="us-east-1">us-east-1</option>
+              <option value="us-west-2">us-west-2</option>
+              <option value="ap-south-1">ap-south-1</option>
+            </select>
+          </div>
+
+          <div className="mb-4">
+            <label className="font-medium mr-2">Select Service:</label>
+            <select
+              value={createService}
+              onChange={e => setCreateService(e.target.value)}
+              className="border p-1 rounded"
+            >
+              <option value="S3">S3</option>
+              {/* Future: <option value="EC2">EC2</option> */}
+            </select>
+
+
+          </div>
+          {createService === 'EC2' && <EC2CreateForm region={region} />}
+          {createService === 'S3' && <S3CreateForm region={region} />}
+        </div>
+      )}
+
       {activeTab === 'Standalone Automation' && <Placeholder title="Standalone Automation" />}
 
       {activeTab === 'Resource management' && (
