@@ -26,7 +26,7 @@ function S3CreateForm({ region }) {
     };
 
     try {
-      const res = await fetch('http://43.204.109.213:5000/create-s3', {
+      const res = await fetch('http://localhost:5000/create-s3', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

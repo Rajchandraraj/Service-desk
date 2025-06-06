@@ -22,7 +22,7 @@ const StorageAccountView = ({
   useEffect(() => {
     const fetchStorageAccounts = async () => {
       try {
-        const response = await fetch("http://43.204.109.213:3001/api/storage-accounts");
+        const response = await fetch("http://localhost:3001/api/storage-accounts");
         const data = await response.json();
         setStorageAccounts(data);
       } catch (error) {
@@ -46,7 +46,7 @@ const StorageAccountView = ({
 
       switch (activeTab) {
         case "blob":
-          endpoint = `http://43.204.109.213:3001/api/storage-accounts/${accountName}/blob-containers`;
+          endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/blob-containers`;
           body = {
             resourceGroupName,
             containerName: formData.name,
@@ -54,7 +54,7 @@ const StorageAccountView = ({
           };
           break;
         case "fileShare":
-          endpoint = `http://43.204.109.213:3001/api/storage-accounts/${accountName}/file-shares`;
+          endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/file-shares`;
           body = {
             resourceGroupName,
             shareName: formData.name,
@@ -62,14 +62,14 @@ const StorageAccountView = ({
           };
           break;
         case "table":
-          endpoint = `http://43.204.109.213:3001/api/storage-accounts/${accountName}/tables`;
+          endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/tables`;
           body = {
             resourceGroupName,
             tableName: formData.name,
           };
           break;
         case "queue":
-          endpoint = `http://43.204.109.213:3001/api/storage-accounts/${accountName}/queues`;
+          endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/queues`;
           body = {
             resourceGroupName,
             queueName: formData.name,
@@ -112,16 +112,16 @@ const StorageAccountView = ({
 
       switch (activeTab) {
         case "blob":
-          endpoint = `http://43.204.109.213:3001/api/storage-accounts/${accountName}/blob-containers/${resourceName}`;
+          endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/blob-containers/${resourceName}`;
           break;
         case "fileShare":
-          endpoint = `http://43.204.109.213:3001/api/storage-accounts/${accountName}/file-shares/${resourceName}`;
+          endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/file-shares/${resourceName}`;
           break;
         case "table":
-          endpoint = `http://43.204.109.213:3001/api/storage-accounts/${accountName}/tables/${resourceName}`;
+          endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/tables/${resourceName}`;
           break;
         case "queue":
-          endpoint = `http://43.204.109.213:3001/api/storage-accounts/${accountName}/queues/${resourceName}`;
+          endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/queues/${resourceName}`;
           break;
         default:
           throw new Error("Invalid resource type");

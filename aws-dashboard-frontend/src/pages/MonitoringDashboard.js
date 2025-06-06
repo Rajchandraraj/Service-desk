@@ -19,7 +19,7 @@ function MonitoringDashboard() {
     
     Promise.all(
       REGIONS.map(region =>
-        axios.get(`http://43.204.109.213:5000/alarms/${region}`)
+        axios.get(`http://localhost:5000/alarms/${region}`)
           .then(res => res.data.map(alarm => ({ ...alarm, region })))
           .catch(() => [])
       )
@@ -44,7 +44,7 @@ function MonitoringDashboard() {
     setSelected(alarm);
     setLoading(true);
     setError('');
-    axios.get(`http://43.204.109.213:5000/metrics/${alarm.region}/${instanceId}`)
+    axios.get(`http://localhost:5000/metrics/${alarm.region}/${instanceId}`)
       .then(res => {
         setMetrics(res.data);
       })

@@ -101,7 +101,7 @@ function InstallSection({ instanceId, region, onInstallComplete }) {
   const [error, setError] = useState(null);
 
   // Use environment variable for backend host
-  const BACKEND_HOST = process.env.REACT_APP_BACKEND_HOST || 'http://43.204.109.213:5000';
+  const BACKEND_HOST = process.env.REACT_APP_BACKEND_HOST || 'http://localhost:5000';
 
   const services = [
     'apache', 'mongo', 'node', 'elasticsearch', 
@@ -481,7 +481,7 @@ function EC2Dashboard({ region = 'us-east-1' }) {
   const [apiHealth, setApiHealth] = useState(null);
 
   // Use environment variable for backend host
-  const BACKEND_HOST = process.env.REACT_APP_BACKEND_HOST || 'http://43.204.109.213:5000';
+  const BACKEND_HOST = process.env.REACT_APP_BACKEND_HOST || 'http://localhost:5000';
 
   useEffect(() => {
     // Check Ansible API health on component mount
