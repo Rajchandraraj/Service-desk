@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { AWS_BACKEND_HOST } from '../config';
 
 const REGIONS = ['us-east-1', 'us-west-2', 'ap-south-1'];
 
@@ -19,7 +20,7 @@ function MonitoringDashboard() {
     
     Promise.all(
       REGIONS.map(region =>
-        axios.get(`http://localhost:5000/alarms/${region}`)
+        axios.get(`${AWS_BACKEND_HOST}/alarms/${region}`)
           .then(res => res.data.map(alarm => ({ ...alarm, region })))
           .catch(() => [])
       )
@@ -44,7 +45,7 @@ function MonitoringDashboard() {
     setSelected(alarm);
     setLoading(true);
     setError('');
-    axios.get(`http://localhost:5000/metrics/${alarm.region}/${instanceId}`)
+    axios.get(`${AWS_BACKEND_HOST}/metrics/${alarm.region}/${instanceId}`)
       .then(res => {
         setMetrics(res.data);
       })

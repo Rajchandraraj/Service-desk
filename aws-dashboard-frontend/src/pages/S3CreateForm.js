@@ -1,5 +1,7 @@
 // pages/S3CreateForm.js
 import React, { useState } from 'react';
+import { AWS_BACKEND_HOST } from '../config';
+
 
 function S3CreateForm({ region }) {
   const [bucketName, setBucketName] = useState('');
@@ -26,7 +28,7 @@ function S3CreateForm({ region }) {
     };
 
     try {
-      const res = await fetch('http://localhost:5000/create-s3', {
+      const res = await fetch(`${AWS_BACKEND_HOST}/create-s3`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
