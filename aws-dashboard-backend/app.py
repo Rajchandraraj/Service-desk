@@ -6,6 +6,8 @@ import json
 from botocore.exceptions import ClientError
 import re
 import logging
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -677,6 +679,79 @@ def get_ecs_vpcs(region):
 @app.route('/ecs/subnets/<region>/<vpc_id>', methods=['GET'])
 def get_ecs_subnets(region, vpc_id):
     return get_subnets(region, vpc_id)
+
+@app.route("/api/billing", methods=["GET"])
+def get_billing_data():
+    try:
+        region = request.args.get("region")
+        start = request.args.get("start", "2025-06-08")
+        end = request.args.get("end", "2025-06-10")
+
+        print(f"Region: {region}, Start: {start}, End: {end}")
+
+        ce_client = boto3.client('ce', region_name=region)
+
+        response = ce_client.get_cost_and_usage(
+            TimePeriod={"Start": start, "End": end},
+            Granularity="DAILY",
+            Metrics=["UnblendedCost"],
+            GroupBy=[{"Type": "DIMENSION", "Key": "SERVICE"}]
+        )
+
+        return jsonify(response)
+
+    except ClientError as e:
+        print("AWS ClientError:", str(e))
+        return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        print("General Exception:", str(e))
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/api/anomaly-summary')
+def anomaly_summary():
+    ce = boto3.client('ce')
+    cad = boto3.client('ce', region_name='us-east-1')
+
+    today = datetime.today()
+    start_mtd = today.replace(day=1).strftime('%Y-%m-%d')
+    end_today = today.strftime('%Y-%m-%d')
+
+    # Spend MTD
+    spend_mtd = ce.get_cost_and_usage(
+        TimePeriod={'Start': start_mtd, 'End': end_today},
+        Granularity='MONTHLY',
+        Metrics=['UnblendedCost']
+    )
+    mtd_total = float(spend_mtd['ResultsByTime'][0]['Total']['UnblendedCost']['Amount'])
+
+    # Spend Last Month
+    last_month_start = (today.replace(day=1) - relativedelta(months=1)).strftime('%Y-%m-%d')
+    last_month_end = (today.replace(day=1) - relativedelta(days=1)).strftime('%Y-%m-%d')
+
+    spend_last_month = ce.get_cost_and_usage(
+        TimePeriod={'Start': last_month_start, 'End': last_month_end},
+        Granularity='MONTHLY',
+        Metrics=['UnblendedCost']
+    )
+    last_total = float(spend_last_month['ResultsByTime'][0]['Total']['UnblendedCost']['Amount'])
+
+    # Change %
+    change = ((mtd_total - last_total) / last_total * 100) if last_total > 0 else 0
+
+    # Anomalies
+    anomalies = cad.get_anomalies(
+        DateInterval={'StartDate': start_mtd, 'EndDate': end_today},
+        MaxResults=100
+    )
+    count = len(anomalies.get('Anomalies', []))
+    impact = sum(float(a['Impact']['TotalImpactAmount']) for a in anomalies.get('Anomalies', []))
+
+    return jsonify({
+        "anomaly_count": count,
+        "impact": impact,
+        "total_spend": mtd_total,
+        "change_percentage": change
+    })
 
 
 @app.route("/api/download-url", methods=["GET"])
