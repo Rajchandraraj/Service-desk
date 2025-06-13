@@ -6,6 +6,7 @@ import EC2CreateForm from './pages/EC2CreateForm.js';
 import StandaloneAutomation from './pages/standaloneautomation.js';
 import VPCCreateForm from './pages/VPCCreateForm.js';
 import ECSCreateForm from './pages/ECSCreateForm.js';
+import BillingDashboard from './pages/billinginformation.js';
 
 function Placeholder({ title }) {
   return (
@@ -35,7 +36,7 @@ function App() {
       </header>
 
       <nav className="flex space-x-4 mt-4">
-        {['Monitoring', 'Resource management', 'Resource creation', 'Standalone Automation'].map(tab => (
+        {['Monitoring', 'Resource management', 'Resource creation', 'Standalone Automation','Billing Information'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -88,6 +89,7 @@ function App() {
 
       {/* Standalone Automation Tab */}
       {activeTab === 'Standalone Automation' && <StandaloneAutomation />}
+      {activeTab === 'Billing Information' && <BillingDashboard />}
 
       {/* Resource Management Tab */}
       {activeTab === 'Resource management' && (
