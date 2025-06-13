@@ -1,3 +1,4 @@
+<<<<<<<< HEAD:aws-dashboard-frontend/build/static/js/main.8f145bf9.js.LICENSE.txt
 /**
  * @license React
  * react-dom-client.production.js
@@ -47,3 +48,5 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+========
+>>>>>>>> 65467b568bbdc48bc8d0a95b135bee7cec02cd44:aws-dashboard-frontend/build/static/js/main.0195bb31.js.LICENSE.txt
