@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { AWS_BACKEND_HOST } from '../config';
+
 
 function VPCCreateForm({ region }) {
   const [form, setForm] = useState({
@@ -22,7 +24,7 @@ function VPCCreateForm({ region }) {
     setMessage('');
 
     try {
-      const res = await axios.post('http://localhost:5000/create-vpc', {
+      const res = await axios.post(`${AWS_BACKEND_HOST}/create-vpc`, {
         ...form,
         region
       });

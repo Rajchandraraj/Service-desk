@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { AWS_BACKEND_HOST } from '../config';
+
 
 function DataTable() {
   const [data, setData] = useState([]);
@@ -8,14 +10,14 @@ function DataTable() {
   const itemsPerPage = 10;
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/data")
+    axios.get(`${AWS_BACKEND_HOST}/api/data`)
       .then(response => setData(response.data))
       .catch(error => console.error("Error fetching data:", error));
   }, []);
 
   const handleDownload = async (key) => {
     try {
-      const response = await axios.get("http://localhost:5000/api/download-url", {
+      const response = await axios.get(`${AWS_BACKEND_HOST}/api/download-url`, {
         params: { key }
       });
       const url = response.data.url;

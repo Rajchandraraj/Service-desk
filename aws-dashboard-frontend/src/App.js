@@ -440,12 +440,12 @@ function App() {
 
   return (
     <div className="p-4 font-sans">
-      <header className="flex items-center justify-between bg-gray-800 p-4 text-white rounded-lg shadow-md">
+      <header className="flex items-center justify-between bg-orange-500 p-4 text-white rounded-lg shadow-md">
         <img
           src="/rapyder.png"
           alt="Logo"
           className="h-10 cursor-pointer"
-          onClick={() => window.location.href = '/'}
+          onClick={() => window.location.href = 'http://localhost:3002'}
         />
         <h1 className="text-2xl">Welcome to Rapyder Service Desk</h1>
       </header>
@@ -504,6 +504,7 @@ function App() {
 
       {/* Standalone Automation Tab */}
       {activeTab === 'Standalone Automation' && <StandaloneAutomation />}
+      {activeTab === 'Billing Information' && <BillingDashboard />}
 
       {/* Resource Management Tab */}
       {activeTab === 'Resource management' && (

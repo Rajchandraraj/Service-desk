@@ -1,3 +1,4 @@
+import { AWS_BACKEND_HOST } from '../config';
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
@@ -6,9 +7,9 @@ const ANSIBLE_API_BASE = 'http://43.204.109.213:8000';
 
 // Installation Service Functions
 class InstallationService {
-  static async getInstancePrivateIP(instanceId, region, BACKEND_HOST) {
+  static async getInstancePrivateIP(instanceId, region, AWS_BACKEND_HOST) {
     try {
-      const response = await axios.get(`${BACKEND_HOST}/instance/${region}/${instanceId}/installation-info`);
+      const response = await axios.get(`${AWS_BACKEND_HOST}/instance/${region}/${instanceId}/installation-info`);
       return response.data.private_ip;
     } catch (error) {
       console.error('Error fetching private IP:', error);
@@ -100,8 +101,6 @@ function InstallSection({ instanceId, region, onInstallComplete }) {
   const [apiHealth, setApiHealth] = useState(null);
   const [error, setError] = useState(null);
 
-  // Use environment variable for backend host
-  const BACKEND_HOST = process.env.REACT_APP_BACKEND_HOST || 'http://localhost:5000';
 
   const services = [
     'apache', 'mongo', 'node', 'elasticsearch', 
@@ -135,7 +134,7 @@ function InstallSection({ instanceId, region, onInstallComplete }) {
         if (health.status === 'healthy') {
           // Get instance private IP
           console.log('Fetching instance private IP...');
-          const ip = await InstallationService.getInstancePrivateIP(instanceId, region, BACKEND_HOST);
+          const ip = await InstallationService.getInstancePrivateIP(instanceId, region, AWS_BACKEND_HOST);
           setPrivateIp(ip);
           console.log('Private IP:', ip);
         }
@@ -150,7 +149,7 @@ function InstallSection({ instanceId, region, onInstallComplete }) {
     };
 
     initializeComponent();
-  }, [instanceId, region, BACKEND_HOST]);
+  }, [instanceId, region, AWS_BACKEND_HOST]);
 
   // Poll deployment status if we have a deployment ID
   useEffect(() => {
@@ -265,7 +264,7 @@ function InstallSection({ instanceId, region, onInstallComplete }) {
     setApiHealth(health);
     if (health.status === 'healthy') {
       try {
-        const ip = await InstallationService.getInstancePrivateIP(instanceId, region, BACKEND_HOST);
+        const ip = await InstallationService.getInstancePrivateIP(instanceId, region, AWS_BACKEND_HOST);
         setPrivateIp(ip);
       } catch (error) {
         setError(error.message);
@@ -480,9 +479,6 @@ function EC2Dashboard({ region = 'us-east-1' }) {
   const [filter, setFilter] = useState('all');
   const [apiHealth, setApiHealth] = useState(null);
 
-  // Use environment variable for backend host
-  const BACKEND_HOST = process.env.REACT_APP_BACKEND_HOST || 'http://localhost:5000';
-
   useEffect(() => {
     // Check Ansible API health on component mount
     const checkHealth = async () => {
@@ -492,7 +488,7 @@ function EC2Dashboard({ region = 'us-east-1' }) {
     checkHealth();
 
     // Load instances from your API
-    axios.get(`${BACKEND_HOST}/instances/${region}`)
+    axios.get(`${AWS_BACKEND_HOST}/instances/${region}`)
       .then(res => {
         if (Array.isArray(res.data)) setInstances(res.data);
       })
@@ -500,10 +496,10 @@ function EC2Dashboard({ region = 'us-east-1' }) {
         console.error('Error fetching instances:', err);
         alert('Failed to fetch instances. Please check if the backend is running.');
       });
-  }, [region, BACKEND_HOST]);
+  }, [region, AWS_BACKEND_HOST]);
 
   const handleAction = (id, action) => {
-    axios.post(`${BACKEND_HOST}/instance/${region}/${id}/${action}`)
+    axios.post(`${AWS_BACKEND_HOST}/instance/${region}/${id}/${action}`)
       .then(() => {
         alert(`Instance ${action} request sent.`);
         setInstances(prev => prev.map(inst => 
@@ -519,7 +515,7 @@ function EC2Dashboard({ region = 'us-east-1' }) {
   const handleResize = (id, type) => {
     const newType = prompt("Enter new instance type:", type);
     if (newType) {
-      axios.post(`${BACKEND_HOST}/instance/${region}/${id}/resize`, {
+      axios.post(`${AWS_BACKEND_HOST}/instance/${region}/${id}/resize`, {
         instance_type: newType
       })
       .then(() => alert('Resize requested.'))
@@ -532,7 +528,7 @@ function EC2Dashboard({ region = 'us-east-1' }) {
 
   const handleTerminate = id => {
     if (window.confirm("Are you sure to terminate this instance?")) {
-      axios.post(`${BACKEND_HOST}/instance/${region}/${id}/terminate`)
+      axios.post(`${AWS_BACKEND_HOST}/instance/${region}/${id}/terminate`)
         .then(() => {
           alert('Instance terminated.');
           // Remove terminated instance from state
@@ -547,11 +543,11 @@ function EC2Dashboard({ region = 'us-east-1' }) {
 
   const handleStopAll = () => {
     if (window.confirm("Are you sure to stop all running instances?")) {
-      axios.post(`${BACKEND_HOST}/instances/${region}/stop_all`)
+      axios.post(`${AWS_BACKEND_HOST}/instances/${region}/stop_all`)
         .then(res => {
           alert(res.data.message);
           // Refresh instances list
-          axios.get(`${BACKEND_HOST}/instances/${region}`)
+          axios.get(`${AWS_BACKEND_HOST}/instances/${region}`)
             .then(res => {
               if (Array.isArray(res.data)) setInstances(res.data);
             });
@@ -567,7 +563,7 @@ function EC2Dashboard({ region = 'us-east-1' }) {
     // Refresh instances or handle post-install actions
     console.log('Installation completed');
     // Optionally refresh the instances list
-    axios.get(`${BACKEND_HOST}/instances/${region}`)
+    axios.get(`${AWS_BACKEND_HOST}/instances/${region}`)
       .then(res => {
         if (Array.isArray(res.data)) setInstances(res.data);
       })

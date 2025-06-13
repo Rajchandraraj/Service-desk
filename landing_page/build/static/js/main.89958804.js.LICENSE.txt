@@ -1,9 +1,8 @@
-<<<<<<<< HEAD:aws-dashboard-frontend/build/static/js/main.8f145bf9.js.LICENSE.txt
 /**
  * @license React
- * react-dom-client.production.js
+ * react-dom.production.min.js
  *
- * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,19 +10,9 @@
 
 /**
  * @license React
- * react-dom.production.js
+ * react-jsx-runtime.production.min.js
  *
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-
-/**
- * @license React
- * react-jsx-runtime.production.js
- *
- * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -31,9 +20,9 @@
 
 /**
  * @license React
- * react.production.js
+ * react.production.min.js
  *
- * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -41,12 +30,21 @@
 
 /**
  * @license React
- * scheduler.production.js
+ * scheduler.production.min.js
  *
- * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-========
->>>>>>>> 65467b568bbdc48bc8d0a95b135bee7cec02cd44:aws-dashboard-frontend/build/static/js/main.0195bb31.js.LICENSE.txt
+
+/**
+ * react-router v7.6.2
+ *
+ * Copyright (c) Remix Software Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE.md file in the root directory of this source tree.
+ *
+ * @license MIT
+ */
