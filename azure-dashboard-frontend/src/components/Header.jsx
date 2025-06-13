@@ -7,9 +7,9 @@ const Header = ({ location, onLocationChange }) => {
   ];
 
   return (
-    <header className="flex items-center justify-between bg-red-600 text-white p-4 rounded-lg shadow-md">
+    <header className="flex items-center justify-between bg-blue-500 text-white p-4 rounded-lg shadow-md">
       <div className="flex items-center space-x-4">
-        <img src="" alt="Logo" className="h-10" />
+        <img src="rapyder.png" alt="Logo" className="h-10" onClick={() => window.location.href = 'http://localhost:3002'} />
         <h1 className="text-3xl font-bold">RAPYDER AZURE SERVICE DESK</h1>
       </div>
       <div>

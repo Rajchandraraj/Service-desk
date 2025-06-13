@@ -156,6 +156,33 @@ const App = () => {
       </main>
 
       <Footer />
+      {/* Chatbot Floating Button and Iframe */}
+{/* Chatbot Floating Button and Iframe */}
+<div className="fixed bottom-4 right-4 z-50">
+  {/* Chat Button with Custom Image */}
+  <button
+    onClick={() => {
+      const iframe = document.getElementById('chatbot-frame');
+      iframe.classList.toggle('hidden');
+    }}
+    className="w-20 h-20 rounded-full shadow-xl border-2 border-white overflow-hidden hover:scale-105 transition-transform duration-300"
+    title="Chat with us"
+  >
+    <img
+      src="/chat-icon.jpg" // replace with your actual image path
+      alt="Chatbot"
+      className="w-full h-full object-cover"
+    />
+  </button>
+
+  {/* Iframe Chatbot - Larger Size */}
+  <iframe
+    id="chatbot-frame"
+    src="https://www.chatbase.co/chatbot-iframe/MK90PJJDvw9IvDVAnfoD-" // replace with your chatbot URL
+    className="hidden mt-3 w-[400px] h-[600px] rounded-2xl shadow-2xl border border-gray-300 bg-white"
+    style={{ position: 'absolute', bottom: '90px', right: '0' }}
+  ></iframe>
+</div>
     </div>
   );
 };
