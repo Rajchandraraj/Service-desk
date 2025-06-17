@@ -5,6 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
   LineChart, Line, ResponsiveContainer
 } from 'recharts';
+import { API_BASE_URL } from '../config';
 
 const BillingDashboard = () => {
   const [region, setRegion] = useState("us-east-1");
@@ -20,11 +21,11 @@ const BillingDashboard = () => {
   const fetchBillingComparison = useCallback(async () => {
     try {
       const fetchRange = async (start, end) => {
-        const res = await axios.get('/api/billing', {
-          params: { start, end, region }
-        });
-        return res.data.ResultsByTime;
-      };
+    const res = await axios.get(`${API_BASE_URL}/utility/api/billing`, {
+  params: { start, end, region }
+});
+   return res.data.ResultsByTime;
+};
 
       const [range1, range2] = await Promise.all([
         fetchRange(start1, end1),
@@ -66,7 +67,7 @@ const BillingDashboard = () => {
 
   const fetchAnomalySummary = async () => {
     try {
-      const res = await axios.get('/api/anomaly-summary');
+      const res = await axios.get(`${API_BASE_URL}/api/anomaly-summary`);
       setAnomalySummary(res.data);
     } catch (err) {
       console.error("Failed to fetch anomaly summary", err);

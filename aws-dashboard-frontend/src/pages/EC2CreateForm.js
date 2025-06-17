@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 function EC2CreateForm({ region }) {
   const [vpcs, setVpcs] = useState([]);
@@ -26,9 +27,9 @@ function EC2CreateForm({ region }) {
     const fetchInitialData = async () => {
       try {
         const [vpcRes, keyPairRes, iamRes] = await Promise.all([
-          axios.get(`/ec2/vpcs/${region}`),
-          axios.get(`/ec2/key-pairs/${region}`),
-          axios.get(`/ec2/iam-profiles/${region}`),
+          axios.get(`${API_BASE_URL}/ec2/vpcs/${region}`),
+          axios.get(`${API_BASE_URL}/ec2/key-pairs/${region}`),
+          axios.get(`${API_BASE_URL}/ec2/iam-profiles/${region}`),
         ]);
         setVpcs(vpcRes.data);
         setKeyPairs(keyPairRes.data);
@@ -48,8 +49,8 @@ function EC2CreateForm({ region }) {
 
     try {
       const [subnetRes, sgRes] = await Promise.all([
-        axios.get(`/ec2/subnets/${region}/${vpc_id}`),
-        axios.get(`/ec2/security-groups/${region}/${vpc_id}`),
+        axios.get(`${API_BASE_URL}/ec2/subnets/${region}/${vpc_id}`),
+        axios.get(`${API_BASE_URL}/ec2/security-groups/${region}/${vpc_id}`),
       ]);
       setSubnets(subnetRes.data);
       setSecurityGroups(sgRes.data);
@@ -69,7 +70,7 @@ function EC2CreateForm({ region }) {
     setCreatedInstance(null);
 
     try {
-      const res = await axios.post('/create-ec2', { ...formData, region });
+      const res = await axios.post(`${API_BASE_URL}/ec2/create-ec2`, { ...formData, region });
       setMessage({ type: 'success', text: res.data.message });
       setCreatedInstance({
         id: res.data.instance_id,

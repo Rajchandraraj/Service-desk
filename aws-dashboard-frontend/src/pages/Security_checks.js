@@ -1,18 +1,45 @@
-import S3CreateForm from './pages/S3CreateForm.js';
-import EC2CreateForm from './pages/EC2CreateForm.js';
-import StandaloneAutomation from './pages/standaloneautomation.js';
-import VPCCreateForm from './pages/VPCCreateForm.js';
-import ECSCreateForm from './pages/ECSCreateForm.js';
+import React, { useState } from 'react';
+import { API_BASE_URL } from '../config';
 
-const BACKEND_URL = 'http://localhost:5000';
-
-function Placeholder({ title }) {
-  return (
-    <div className="mt-4 text-center">
-      <h2 className="text-2xl font-bold">{title}</h2>
-      <p className="text-gray-500">Page is under construction</p>
-    </div>
-  );
+// --- Helper to render details (array or string/number) ---
+function renderDetails(item) {
+  if (item === undefined || item === null) {
+    return <span>No details available</span>;
+  }
+  if (Array.isArray(item)) {
+    return (
+      <ul className="list-disc ml-6">
+        {item.map((detail, idx) => (
+          <li key={idx}>
+            {typeof detail === 'object' && detail !== null
+              ? (
+                <ul className="ml-4">
+                  {Object.entries(detail).map(([k, v]) => (
+                    <li key={k}>
+                      <b>{k}:</b> {String(v)}
+                    </li>
+                  ))}
+                </ul>
+              )
+              : String(detail)
+            }
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  if (typeof item === 'object' && item !== null) {
+    return (
+      <ul className="ml-6">
+        {Object.entries(item).map(([k, v]) => (
+          <li key={k}>
+            <b>{k}:</b> {String(v)}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  return String(item);
 }
 
 // --- EC2 Security Checks Component ---
@@ -34,9 +61,9 @@ function EC2SecurityChecks({ region }) {
     setLoading(true);
     setError('');
     setResults(null);
-    setShowDetails({}); // <-- Add this line to clear previous expanded details
+    setShowDetails({});
     try {
-      const res = await fetch(`${BACKEND_URL}/security/ec2?region=${region}`);
+      const res = await fetch(`${API_BASE_URL}/security/ec2?region=${region}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setResults(data);
@@ -97,10 +124,14 @@ function EC2SecurityChecks({ region }) {
                 </div>
               </div>
               {/* Show details if failed and toggled */}
-              {results[check.key] === 'fail' && showDetails[check.key] && results[`${check.key}_details`] && (
+              {results[check.key] === 'fail' && showDetails[check.key] && (
                 <div className="text-sm text-red-700 mt-1 bg-red-50 rounded p-2">
                   <strong>Details:</strong>
-                  {renderDetails(results[`${check.key}_details`])}
+                  {renderDetails(
+                    results[`${check.key}_details`] !== undefined && results[`${check.key}_details`] !== null
+                      ? results[`${check.key}_details`]
+                      : "No details available"
+                  )}
                 </div>
               )}
             </li>
@@ -116,6 +147,7 @@ function S3SecurityChecks({ region }) {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState('');
+  const [showDetails, setShowDetails] = useState({});
 
   const checks = [
     { key: 'public_buckets', label: 'No S3 buckets should be public' },
@@ -128,8 +160,9 @@ function S3SecurityChecks({ region }) {
     setLoading(true);
     setError('');
     setResults(null);
+    setShowDetails({});
     try {
-      const res = await fetch(`${BACKEND_URL}/security/s3?region=${region}`);
+      const res = await fetch(`${API_BASE_URL}/security/s3?region=${region}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setResults(data);
@@ -139,10 +172,17 @@ function S3SecurityChecks({ region }) {
     setLoading(false);
   };
 
+  const handleToggleDetails = (key) => {
+    setShowDetails(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
   return (
     <div>
       <button
-        className="bg-blue-600 text-white px-4 py-2 rounded mb-4"
+        className="bg-green-600 text-white px-4 py-2 rounded mb-4"
         onClick={runChecks}
         disabled={loading}
       >
@@ -164,18 +204,32 @@ function S3SecurityChecks({ region }) {
             >
               <div className="flex justify-between items-center">
                 <span>{check.label}</span>
-                {results[check.key] === 'fail' && (
-                  <span className="text-red-600 font-bold">Failed</span>
-                )}
-                {results[check.key] === 'pass' && (
-                  <span className="text-green-600 font-bold">Passed</span>
-                )}
+                <div className="flex items-center gap-2">
+                  {results[check.key] === 'fail' && (
+                    <>
+                      <span className="text-red-600 font-bold">Failed</span>
+                      <button
+                        className="ml-2 px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700 transition"
+                        onClick={() => handleToggleDetails(check.key)}
+                      >
+                        {showDetails[check.key] ? 'Hide' : 'View'}
+                      </button>
+                    </>
+                  )}
+                  {results[check.key] === 'pass' && (
+                    <span className="text-green-600 font-bold">Passed</span>
+                  )}
+                </div>
               </div>
-              {/* Show details if failed and details exist */}
-              {results[check.key] === 'fail' && results[`${check.key}_details`] && (
+              {/* Show details if failed and toggled */}
+              {results[check.key] === 'fail' && showDetails[check.key] && (
                 <div className="text-sm text-red-700 mt-1 bg-red-50 rounded p-2">
                   <strong>Details:</strong>
-                  {renderDetails(results[`${check.key}_details`])}
+                  {renderDetails(
+                    results[`${check.key}_details`] !== undefined && results[`${check.key}_details`] !== null
+                      ? results[`${check.key}_details`]
+                      : "No details available"
+                  )}
                 </div>
               )}
             </li>
@@ -187,8 +241,6 @@ function S3SecurityChecks({ region }) {
 }
 
 // --- SecurityTab with Expandable Sections ---
-// ...existing imports...
-
 function SecurityTab() {
   const [expanded, setExpanded] = useState(null);
   const [region, setRegion] = useState('us-east-1');
@@ -226,8 +278,8 @@ function SecurityTab() {
     setPciLoading(true);
     try {
       const [ec2Res, s3Res] = await Promise.all([
-        fetch(`http://localhost:5000/security/ec2?region=${region}`).then(r => r.json()),
-        fetch(`http://localhost:5000/security/s3?region=${region}`).then(r => r.json())
+        fetch(`${API_BASE_URL}/security/ec2?region=${region}`).then(r => r.json()),
+        fetch(`${API_BASE_URL}/security/s3?region=${region}`).then(r => r.json())
       ]);
       if (ec2Res.error || s3Res.error) {
         setPciError(ec2Res.error || s3Res.error);
@@ -244,7 +296,7 @@ function SecurityTab() {
     clearAllResults();
     setFoundationLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/security/foundation?region=${region}`);
+      const res = await fetch(`${API_BASE_URL}/security/foundation?region=${region}`);
       const data = await res.json();
       if (data.error) setFoundationError(data.error);
       else setFoundationResults(data);
@@ -397,224 +449,44 @@ function SecurityTab() {
       )}
       {foundationLoading && <div className="text-blue-700 font-semibold mb-2">Running AWS Foundation checks...</div>}
       {foundationError && <div className="text-red-600 mb-2">{foundationError}</div>}
-      {foundationResults && (
-        <div className="mb-6">
-          <div className="font-bold text-lg mb-2">AWS Foundation Results</div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full border border-gray-300 rounded-lg bg-white text-base">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 border-b text-left font-bold">Check Name</th>
-                  <th className="px-4 py-2 border-b text-center font-bold">Result</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(foundationResults).map(([key, value]) => (
-                  <tr key={key}>
-                    <td className="px-4 py-2 border-b">{key.replace(/_/g, ' ')}</td>
-                    <td className="px-4 py-2 border-b text-center">
-                      {value === 'pass' && <span className="text-green-600 font-bold">Passed</span>}
-                      {value === 'fail' && <span className="text-red-600 font-bold">Failed</span>}
-                      {value !== 'pass' && value !== 'fail' && <span className="text-gray-400">{value}</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      {foundationResults && foundationResults.foundation_checks && (
+        <FoundationChecksTable foundationChecks={foundationResults.foundation_checks} />
       )}
     </div>
   );
 }
-// --- Rest of your unchanged App.js code below ---
 
-function App() {
-  const [activeTab, setActiveTab] = useState('Resource management');
-  const [resourceTab, setResourceTab] = useState('EC2');
-  const [region, setRegion] = useState('us-east-1');
-  const [createService, setCreateService] = useState('S3');
-
+function FoundationChecksTable({ foundationChecks }) {
+  if (!foundationChecks || !Array.isArray(foundationChecks)) return null;
   return (
-    <div className="p-4 font-sans">
-      <header className="flex items-center justify-between bg-gray-800 p-4 text-white rounded-lg shadow-md">
-        <img
-          src="/rapyder.png"
-          alt="Logo"
-          className="h-10 cursor-pointer"
-          onClick={() => window.location.href = '/'}
-        />
-        <h1 className="text-2xl">Welcome to Rapyder Service Desk</h1>
-      </header>
-
-      <nav className="flex space-x-4 mt-4">
-        {['Monitoring', 'Resource management', 'Resource creation', 'Standalone Automation', 'Security'].map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-          >
-            {tab}
-          </button>
-        ))}
-      </nav>
-
-      {/* Monitoring Tab */}
-      {activeTab === 'Monitoring' && <MonitoringDashboard region={region} />}
-
-      {/* Resource Creation Tab */}
-      {activeTab === 'Resource creation' && (
-        <div className="mt-4">
-          <div className="mb-4">
-            <label className="font-medium mr-2">Region:</label>
-            <select
-              value={region}
-              onChange={e => setRegion(e.target.value)}
-              className="border p-1 rounded"
-            >
-              <option value="us-east-1">us-east-1</option>
-              <option value="us-west-2">us-west-2</option>
-              <option value="ap-south-1">ap-south-1</option>
-            </select>
-          </div>
-
-          <div className="mb-4">
-            <label className="font-medium mr-2">Select Service:</label>
-            <select
-              value={createService}
-              onChange={e => setCreateService(e.target.value)}
-              className="border p-1 rounded"
-            >
-              <option value="S3">S3</option>
-              <option value="EC2">EC2</option>
-              <option value="VPC">VPC</option>
-              <option value="ECS">ECS</option>
-            </select>
-          </div>
-
-          {createService === 'S3' && <S3CreateForm region={region} />}
-          {createService === 'EC2' && <EC2CreateForm region={region} />}
-          {createService === 'VPC' && <VPCCreateForm region={region} />}
-          {createService === 'ECS' && <ECSCreateForm region={region} />}
-        </div>
-      )}
-
-      {/* Standalone Automation Tab */}
-      {activeTab === 'Standalone Automation' && <StandaloneAutomation />}
-
-      {/* Resource Management Tab */}
-      {activeTab === 'Resource management' && (
-        <div className="mt-4">
-          <div className="mb-4">
-            <label className="font-medium mr-2">Region:</label>
-            <select
-              value={region}
-              onChange={e => setRegion(e.target.value)}
-              className="border p-1 rounded"
-            >
-              <option value="us-east-1">us-east-1</option>
-              <option value="us-west-2">us-west-2</option>
-              <option value="ap-south-1">ap-south-1</option>
-            </select>
-          </div>
-
-          <nav className="flex space-x-4 mb-4">
-            {['EC2', 'S3', 'VPC', 'RDS'].map(tab => (
-              <button
-                key={tab}
-                onClick={() => setResourceTab(tab)}
-                className={`px-4 py-2 rounded ${resourceTab === tab ? 'bg-green-600 text-white' : 'bg-gray-200'}`}
-              >
-                {tab}
-              </button>
+    <div className="mb-6">
+      <div className="font-bold text-lg mb-2">AWS Foundation Results</div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full border border-gray-300 rounded-lg bg-white text-base">
+          <thead>
+            <tr>
+              <th className="px-4 py-2 border-b text-left font-bold">Check Name</th>
+              <th className="px-4 py-2 border-b text-center font-bold">Result</th>
+              <th className="px-4 py-2 border-b text-left font-bold">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {foundationChecks.map((check, idx) => (
+              <tr key={idx}>
+                <td className="px-4 py-2 border-b">{check.name}</td>
+                <td className="px-4 py-2 border-b text-center">
+                  {check.status === 'PASS' && <span className="text-green-600 font-bold">Passed</span>}
+                  {check.status === 'FAIL' && <span className="text-red-600 font-bold">Failed</span>}
+                  {check.status !== 'PASS' && check.status !== 'FAIL' && <span className="text-gray-400">{check.status}</span>}
+                </td>
+                <td className="px-4 py-2 border-b">{check.description}</td>
+              </tr>
             ))}
-          </nav>
-
-          {resourceTab === 'EC2' ? (
-            <EC2Dashboard region={region} />
-          ) : (
-            <Placeholder title={resourceTab} />
-          )}
-        </div>
-      )}
-
-      {/* Security Tab */}
-      {activeTab === 'Security' && <SecurityTab />}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
 
-function renderDetails(item) {
-  // Helper for rules
-  const renderRule = (rule, idx) => (
-    <div key={idx} className="mb-1 ml-2 p-1 bg-gray-100 rounded">
-      <div>
-        <b>Protocol:</b> {rule.IpProtocol}
-        {rule.IpProtocol === "-1" && <span className="text-red-600 font-semibold"> (open for all)</span>}
-      </div>
-      {rule.FromPort !== undefined && rule.FromPort !== null && (
-        <div><b>FromPort:</b> {rule.FromPort}</div>
-      )}
-      {rule.ToPort !== undefined && rule.ToPort !== null && (
-        <div><b>ToPort:</b> {rule.ToPort}</div>
-      )}
-      {Array.isArray(rule.IpRanges) && rule.IpRanges.length > 0 && (
-        <div>
-          <b>CidrIp:</b>{" "}
-          {rule.IpRanges.map((ip, i) => ip.CidrIp).filter(Boolean).join(', ')}
-        </div>
-      )}
-    </div>
-  );
-
-  // Array of objects (list of failed SGs)
-  if (Array.isArray(item)) {
-    return (
-      <div>
-        {item.map((sg, idx) => (
-          <div key={idx} className="mb-3 p-2 border rounded bg-gray-50">
-            <div><b>VpcId:</b> {sg.VpcId}</div>
-            <div><b>GroupId:</b> {sg.GroupId}</div>
-            <div><b>Region:</b> {sg.Region}</div>
-            <div><b>Reason:</b> {sg.Reason}</div>
-            {sg.FailedInboundRules && sg.FailedInboundRules.length > 0 && (
-              <div>
-                <b>Failed Inbound Rules:</b>
-                {sg.FailedInboundRules.map(renderRule)}
-              </div>
-            )}
-            {sg.FailedOutboundRules && sg.FailedOutboundRules.length > 0 && (
-              <div>
-                <b>Failed Outbound Rules:</b>
-                {sg.FailedOutboundRules.map(renderRule)}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  // Single object (for other details)
-  if (typeof item === "object" && item !== null) {
-    // Only show important keys
-    const keysToShow = ["VpcId", "GroupId", "Region", "Reason", "FailedInboundRules", "FailedOutboundRules"];
-    return (
-      <div className="mb-2 p-2 bg-gray-50 rounded border">
-        {Object.entries(item)
-          .filter(([key]) => keysToShow.includes(key))
-          .map(([key, value], idx) => (
-            <div key={idx}>
-              <span className="font-semibold">{key}:</span>{" "}
-              {typeof value === "object" ? renderDetails(value) : String(value)}
-            </div>
-          ))}
-      </div>
-    );
-  }
-
-  // String or number
-  return String(item);
-}
-
-export default App;
+export default SecurityTab;

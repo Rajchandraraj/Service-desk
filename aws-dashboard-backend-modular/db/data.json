@@ -1,0 +1,158 @@
+[
+  {
+    "Category": "Monitoring",
+    "Request Type": "Compute Resource Health & Utilization",
+    "Comment": "Automating resource health checks and utilization can significantly reduce the time required by utilizing scripts and tools that continuously monitor and report the status, reducing the need for manual intervention. Alarms can be set on.",
+    "Download_Link": "Azure/AI-Integrated Linux Service Monitoring and Alerting Framework with HTML Reporting/AI-Integrated Linux Service Monitoring and Alerting Framework with HTML Reporting.docx"
+  },
+  {
+    "Category": "Monitoring",
+    "Request Type": "Database Health & Performance Monitoring",
+    "Comment": "Automated monitoring tools can provide real-time insights, drastically cutting down the time needed compared to manual checks.",
+    "Download_Link": "Azure/Ansible Playbooks for Creating Sudo and Non-Sudo Users with SSH Password Authentication/Ansible Playbooks for Creating Sudo and Non-Sudo Users with SSH Password Authentication.docx"
+  },
+  {
+    "Category": "Monitoring",
+    "Request Type": "SSL Certificate Expiry Monitoring",
+    "Comment": "Automation and alarm based",
+    "Download_Link": "Azure/Application Gateway Structure and Configuration Mapping Tool/Application Gateway Structure and Configuration Mapping Tool.docx"
+  },
+  {
+    "Category": "Monitoring",
+    "Request Type": "Application & Service Availability Monitoring",
+    "Comment": "Automation tools can provide instant alerts and status updates, reducing the need for manual monitoring and checks.",
+    "Download_Link": "Automated Azure Communication Service Email Status Monitoring and Reporting/Automated Azure Communication Service Email Status Monitoring and Reporting.docx"
+  },
+  {
+    "Category": "Report",
+    "Request Type": "Daily Cost Report",
+    "Comment": "RCMT we have automation with RCMT",
+    "Download_Link": "Azure/Automated Full Backup Script for MariaDB Databases/Automated Full Backup Script for MariaDB Databases.docx"
+  },
+  {
+    "Category": "Report",
+    "Request Type": "Security Report",
+    "Comment": "Enabling and creating alert for security measure services like guard duty inspector",
+    "Download_Link": "Azure/Automated Pre-Patch Assessment and Reporting Script for Virtual Machines/Automated Pre-Patch Assessment and Reporting Script for Virtual Machines.docx"
+  },
+  {
+    "Category": "Incident",
+    "Request Type": "Patching Report",
+    "Comment": "RCMT we have, Automation is done with RCMT",
+    "Download_Link": "Azure/fetching-multiple-vms-cpu-and-memory-metrics-for-30-days/Fetching Multiple VMS CPU And Memory metrics for 30 days.docx"
+  },
+  {
+    "Category": "Incident",
+    "Request Type": "Resource Utilization Report",
+    "Comment": "Bin / Bash script",
+    "Download_Link": "Azure/mariadb-Incremental-backup-automation/Mariadb Incremental Backup Automation.docx"
+  },
+  {
+    "Category": "Incident",
+    "Request Type": "Application Gateway Status",
+    "Comment": "Bin / Bash script",
+    "Download_Link": "Azure/mariadb-Incremental-backup-automation/Mariadb Incremental Backup Automation.docx"
+  },
+  {
+    "Category": "Incident",
+    "Request Type": "URL Down",
+    "Comment": "Scripted",
+    "Download_Link": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN"
+  },
+  {
+    "Category": "Incident",
+    "Request Type": "EC2 Instance in Failed State",
+    "Comment": "Status cake alarm",
+    "Download_Link": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN"
+  },
+  {
+    "Category": "Incident",
+    "Request Type": "Service Failure",
+    "Comment": "instance failed state alarm",
+    "Download_Link": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN"
+  },
+  {
+    "Category": "Incident",
+    "Request Type": "High EC2 Utilization",
+    "Comment": "Instance availability",
+    "Download_Link": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN"
+  },
+  {
+    "Category": "Incident",
+    "Request Type": "Load Balancer Health Probe Failed",
+    "Comment": "High CPU alert configuration",
+    "Download_Link": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN"
+  },
+  {
+    "Category": "Incident",
+    "Request Type": "EC2 Rebooted Unexpectedly",
+    "Comment": "EC2 Rebooted Unexpectedly",
+    "Download_Link": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN"
+  },
+  {
+    "Category": "Incident",
+    "Request Type": "Unhealthy Host Count",
+    "Comment": "Automation script/document available for Unhealthy Host Count.",
+    "Download_Link": "Azure/Ubuntu-OS-Hardening/Ubuntu OS Hardening.docx"
+  },
+  {
+    "Category": "Incident",
+    "Request Type": "Backup Configuration",
+    "Comment": "Backup Configuration",
+    "Download_Link": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN"
+  },
+  {
+    "Category": "Service Request",
+    "Request Type": "Data upload on S3",
+    "Comment": "AWS backup / Life cycle manager",
+    "Download_Link": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN"
+  },
+  {
+    "Category": "Service Request",
+    "Request Type": "Creation of Alerts",
+    "Comment": "Terraform/ansible script",
+    "Download_Link": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN"
+  },
+  {
+    "Category": "Service Request",
+    "Request Type": "Data transfer",
+    "Comment": "AWS CLI can be used this also with a bin/bash script",
+    "Download_Link": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN"
+  },
+  {
+    "Category": "Database",
+    "Request Type": "Database Logs Request",
+    "Comment": "Automation for alarm creation bin/bash script",
+    "Download_Link": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN"
+  },
+  {
+    "Category": "Database",
+    "Request Type": "Database Import/Export Request",
+    "Comment": "Automated database import/export tools can quickly handle data transfer tasks, reducing the time required for manual intervention and send mail to user incase of failure and summary of the backup as well",
+    "Download_Link": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN"
+  },
+  {
+    "Category": "Database",
+    "Request Type": "Database User Creation/Deletion",
+    "Comment": "Terraform script",
+    "Download_Link": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN"
+  },
+  {
+    "Category": "Database",
+    "Request Type": "Aurora Database Creation",
+    "Comment": "Terraform script",
+    "Download_Link": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN"
+  },
+  {
+    "Category": "Database",
+    "Request Type": "RDS Instance Creation",
+    "Comment": "Bin / Bash script",
+    "Download_Link": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN"
+  },
+  {
+    "Category": "Database",
+    "Request Type": "Database Sanity Check",
+    "Comment": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN",
+    "Download_Link": "https://rapyder-my.sharepoint.com/personal/mohammed_faiz_rapyder_com/Documents/../../../:w:/p/mohammed_faiz/EQ4dIfXQeetBqrZHnAGrF_UBqY1_gBxkC9aRmXC0_AUxDw?e=oHiIMN"
+  }
+]

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 function VPCCreateForm({ region }) {
   const [form, setForm] = useState({
@@ -22,7 +23,7 @@ function VPCCreateForm({ region }) {
     setMessage('');
 
     try {
-      const res = await axios.post('http://localhost:5000/create-vpc', {
+      const res = await axios.post(`${API_BASE_URL}/ec2/create-vpc`, {
         ...form,
         region
       });

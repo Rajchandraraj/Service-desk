@@ -1,5 +1,7 @@
 // pages/ECSCreateForm.js
 import React, { useState } from 'react';
+import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 function ECSCreateForm({ region }) {
   const [clusterName, setClusterName] = useState('');
@@ -10,8 +12,9 @@ function ECSCreateForm({ region }) {
   const [taskDefName, setTaskDefName] = useState('');
   const [taskDefVersion, setTaskDefVersion] = useState('');
   const [containerName, setContainerName] = useState('');
+  const [message, setMessage] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const payload = {
@@ -26,13 +29,23 @@ function ECSCreateForm({ region }) {
       containerName,
     };
 
-    // Make API call to backend (you need to build this API)
-    console.log('Submitting ECS data:', payload);
+    try {
+      const res = await axios.post(`${API_BASE_URL}/ecs/create`, payload);
+      setMessage({ type: 'success', text: res.data.message || 'ECS resources created successfully!' });
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.error || 'Failed to create ECS resources.' });
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-4 border rounded shadow">
       <h2 className="text-xl font-bold">Create ECS Cluster, Service & Task</h2>
+
+      {message && (
+        <div className={`p-2 rounded ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+          {message.text}
+        </div>
+      )}
 
       <div>
         <label className="block font-medium">Cluster Name</label>

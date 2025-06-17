@@ -7,6 +7,9 @@ import StandaloneAutomation from './pages/standaloneautomation.js';
 import VPCCreateForm from './pages/VPCCreateForm.js';
 import ECSCreateForm from './pages/ECSCreateForm.js';
 import BillingDashboard from './pages/billinginformation.js';
+import Security_checks from './pages/Security_checks.js';
+import { API_BASE_URL } from './config';
+
 
 function Placeholder({ title }) {
   return (
@@ -30,13 +33,20 @@ function App() {
           src="/rapyder.png"
           alt="Logo"
           className="h-10 cursor-pointer"
-          onClick={() => window.location.href = 'http://localhost:3002'}
+          onClick={() => window.location.href = 'https://awsbackend.skyclouds.live'}
         />
         <h1 className="text-2xl">Welcome to Rapyder Service Desk</h1>
       </header>
 
       <nav className="flex space-x-4 mt-4">
-        {['Monitoring', 'Resource management', 'Resource creation', 'Standalone Automation','Billing Information'].map(tab => (
+        {[
+          'Monitoring',
+          'Resource management',
+          'Resource creation',
+          'Standalone Automation',
+          'Billing Information',
+          'Security' // <-- Added Security here
+        ].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -91,6 +101,9 @@ function App() {
       {activeTab === 'Standalone Automation' && <StandaloneAutomation />}
       {activeTab === 'Billing Information' && <BillingDashboard />}
 
+      {/* Security Tab */}
+      {activeTab === 'Security' && <Security_checks region={region} />}
+
       {/* Resource Management Tab */}
       {activeTab === 'Resource management' && (
         <div className="mt-4">
@@ -127,36 +140,33 @@ function App() {
         </div>
       )}
       {/* Chatbot Floating Button and Iframe */}
-{/* Chatbot Floating Button and Iframe */}
-<div className="fixed bottom-4 right-4 z-50">
-  {/* Chat Button with Custom Image */}
-  <button
-    onClick={() => {
-      const iframe = document.getElementById('chatbot-frame');
-      iframe.classList.toggle('hidden');
-    }}
-    className="w-20 h-20 rounded-full shadow-xl border-2 border-white overflow-hidden hover:scale-105 transition-transform duration-300"
-    title="Chat with us"
-  >
-    <img
-      src="/chat-icon.jpg" // replace with your actual image path
-      alt="Chatbot"
-      className="w-full h-full object-cover"
-    />
-  </button>
+      <div className="fixed bottom-4 right-4 z-50">
+        {/* Chat Button with Custom Image */}
+        <button
+          onClick={() => {
+            const iframe = document.getElementById('chatbot-frame');
+            iframe.classList.toggle('hidden');
+          }}
+          className="w-20 h-20 rounded-full shadow-xl border-2 border-white overflow-hidden hover:scale-105 transition-transform duration-300"
+          title="Chat with us"
+        >
+          <img
+            src="/chat-icon.jpg"
+            alt="Chatbot"
+            className="w-full h-full object-cover"
+          />
+        </button>
 
-  {/* Iframe Chatbot - Larger Size */}
-  <iframe
-    id="chatbot-frame"
-    src="https://www.chatbase.co/chatbot-iframe/MK90PJJDvw9IvDVAnfoD-" // replace with your chatbot URL
-    className="hidden mt-3 w-[400px] h-[600px] rounded-2xl shadow-2xl border border-gray-300 bg-white"
-    style={{ position: 'absolute', bottom: '90px', right: '0' }}
-  ></iframe>
-</div>
-
+        {/* Iframe Chatbot - Larger Size */}
+        <iframe
+          id="chatbot-frame"
+          src="https://www.chatbase.co/chatbot-iframe/MK90PJJDvw9IvDVAnfoD-"
+          className="hidden mt-3 w-[400px] h-[600px] rounded-2xl shadow-2xl border border-gray-300 bg-white"
+          style={{ position: 'absolute', bottom: '90px', right: '0' }}
+        ></iframe>
+      </div>
     </div>
   );
-
 }
 
 export default App;

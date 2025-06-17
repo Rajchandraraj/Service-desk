@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 function DataTable() {
   const [data, setData] = useState([]);
@@ -8,14 +9,14 @@ function DataTable() {
   const itemsPerPage = 10;
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/data")
+    axios.get(`${API_BASE_URL}/utility/api/data`)
       .then(response => setData(response.data))
       .catch(error => console.error("Error fetching data:", error));
   }, []);
 
   const handleDownload = async (key) => {
     try {
-      const response = await axios.get("http://localhost:5000/api/download-url", {
+      const response = await axios.get(`${API_BASE_URL}/api/download-url`, {
         params: { key }
       });
       const url = response.data.url;

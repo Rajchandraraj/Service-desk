@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { API_BASE_URL } from '../config';
 
 const REGIONS = ['us-east-1', 'us-west-2', 'ap-south-1'];
 
@@ -19,7 +20,7 @@ function MonitoringDashboard() {
     
     Promise.all(
       REGIONS.map(region =>
-        axios.get(`http://localhost:5000/alarms/${region}`)
+        axios.get(`${API_BASE_URL}/ec2/alarms/${region}`)
           .then(res => res.data.map(alarm => ({ ...alarm, region })))
           .catch(() => [])
       )
@@ -44,7 +45,7 @@ function MonitoringDashboard() {
     setSelected(alarm);
     setLoading(true);
     setError('');
-    axios.get(`http://localhost:5000/metrics/${alarm.region}/${instanceId}`)
+    axios.get(`${API_BASE_URL}/metrics/${alarm.region}/${instanceId}`)
       .then(res => {
         setMetrics(res.data);
       })
@@ -79,10 +80,35 @@ function MonitoringDashboard() {
     <div className="mt-4">
       <h2 className="text-xl font-bold mb-4">CloudWatch Alarms (State: ALARM)</h2>
       {alarms.length === 0 && <p className="text-gray-500">No alarms found across regions.</p>}
-      <ul className="space-y-2 mb-6">
-        {alarms.map(alarm => (
-          <li key={alarm.name + alarm.region} className="p-3 bg-red-100 border-l-4 border-red-500 rounded cursor-pointer" onClick={() => handleSelectAlarm(alarm)}>
-            <strong>{alarm.name}</strong> — {alarm.metric} — <code>{alarm.dimensions?.map(d => `${d.Name}=${d.Value}`).join(', ')}</code> — <span className="text-sm italic text-gray-700">{alarm.region}</span>
+      <ul className="space-y-4">
+        {alarms.map((alarm, idx) => (
+          <li key={alarm.name + alarm.region + idx} className="p-4 bg-white border-l-4 border-red-500 rounded shadow hover:shadow-lg hover:bg-red-50 transition">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <span className="font-bold text-gray-800 text-base">{alarm.name || <i>No Name</i>}</span>
+              <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">{alarm.region}</span>
+              <span className={`text-xs px-2 py-0.5 rounded font-bold ${alarm.state === 'ALARM' ? 'bg-red-200 text-red-700' : 'bg-green-200 text-green-700'}`}>
+                {alarm.state || 'ALARM'}
+              </span>
+            </div>
+            <div className="text-sm text-gray-700"><b>Metric:</b> {alarm.metric || <i>N/A</i>}</div>
+            {alarm.dimensions && alarm.dimensions.length > 0 && (
+              <div className="text-xs text-gray-600">
+                <b>Dimensions:</b>
+                <ul className="ml-4 list-disc">
+                  {alarm.dimensions.map((d, i) => (
+                    <li key={i} className="font-mono">{d.Name} = {d.Value}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {alarm.reason && (
+              <div className="text-xs text-gray-600 mt-1">
+                <b>Reason:</b> {alarm.reason}
+              </div>
+            )}
+            <div className="text-xs text-gray-500 mt-1">
+              <b>Last Updated:</b> {alarm.lastUpdated ? new Date(alarm.lastUpdated).toLocaleString() : <i>N/A</i>}
+            </div>
           </li>
         ))}
       </ul>
