@@ -11,6 +11,7 @@ import Security_checks from './pages/Security_checks.js';
 import { API_BASE_URL } from './config';
 
 
+
 function Placeholder({ title }) {
   return (
     <div className="mt-4 text-center">
