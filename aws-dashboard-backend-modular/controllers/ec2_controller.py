@@ -270,35 +270,11 @@ def get_instance_details(region, instance_id):
             return jsonify({'error': error_str}), 500
 
 def get_instance_private_ip(region, instance_id):
-    try:
-        ec2 = get_ec2_client(region)
-        response = ec2.describe_instances(InstanceIds=[instance_id])
-        if not response['Reservations']:
-            return jsonify({'error': 'Instance not found'}), 404
-        inst = response['Reservations'][0]['Instances'][0]
-        private_ip = inst.get('PrivateIpAddress', None)
-        public_ip = inst.get('PublicIpAddress', None)
-        state = inst['State']['Name']
-        if not private_ip:
-            return jsonify({
-                'error': 'Private IP not available for this instance',
-                'instance_id': instance_id,
-                'state': state
-            }), 400
-        return jsonify({
-            'instance_id': instance_id,
-            'private_ip': private_ip,
-            'public_ip': public_ip,
-            'state': state,
-            'ready_for_installation': state == 'running' and private_ip is not None
-        })
-    except Exception as e:
-        error_str = str(e)
-        logger.error(f"Error fetching private IP for instance {instance_id}: {error_str}")
-        if 'InvalidInstanceID.NotFound' in error_str:
-            return jsonify({'error': 'Instance not found'}), 404
-        else:
-            return jsonify({'error': error_str}), 500
+    ec2 = get_ec2_client(region)
+    response = ec2.describe_instances(InstanceIds=[instance_id])
+    print("DEBUG INSTANCE:", response['Reservations'][0]['Instances'][0])
+    inst = response['Reservations'][0]['Instances'][0]
+    return inst.get('PrivateIpAddress')
 
 def get_installation_info(region, instance_id):
     try:

@@ -164,7 +164,13 @@ function InstallSection({ instanceId, region, onInstallComplete }) {
               onInstallComplete();
               resetInstall();
             } else {
-              const errorMsg = status.error_output?.join('\n') || 'Unknown error';
+              const errorMsg =
+                (status.error_output && status.error_output.length > 0)
+                  ? status.error_output.join('\n')
+                  : status.message
+                    ? status.message
+                    : JSON.stringify(status);
+
               alert(`❌ Installation failed:\n${errorMsg}`);
               setError(`Installation failed: ${errorMsg}`);
             }
@@ -216,6 +222,7 @@ function InstallSection({ instanceId, region, onInstallComplete }) {
       if (result.deployment_id) {
         setDeploymentId(result.deployment_id);
         setDeploymentStatus(result);
+        return;
         // Status polling will handle the rest
       } else {
         // Immediate completion
@@ -225,7 +232,13 @@ function InstallSection({ instanceId, region, onInstallComplete }) {
           onInstallComplete();
           resetInstall();
         } else {
-          const errorMsg = result.error_output?.join('\n') || result.message || 'Unknown error';
+          const errorMsg =
+            (result.error_output && result.error_output.length > 0)
+              ? result.error_output.join('\n')
+              : result.message
+                ? result.message
+                : JSON.stringify(result);
+
           setError(`Installation failed: ${errorMsg}`);
         }
       }
