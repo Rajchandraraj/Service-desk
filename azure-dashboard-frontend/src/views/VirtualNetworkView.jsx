@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import ResourceList from "../components/ResourceList";
 import ResourceDetails from "../components/ResourceDetails";
 
+const AZURE_API_BASE_URL = process.env.REACT_APP_AZURE_API_BASE_URL || 'http://localhost:3001';
+
 const VirtualNetworkView = ({
   selectedResource,
   onSelectResource,
@@ -16,7 +18,8 @@ const VirtualNetworkView = ({
   useEffect(() => {
     const fetchVirtualNetworks = async () => {
       try {
-        const response = await fetch("http://localhost:3001/api/vnets");
+        //const response = await fetch("http://localhost:3001/api/vnets");
+        const response = await fetch(`${AZURE_API_BASE_URL}/api/vnets`);
         const data = await response.json();
         setVirtualNetworks(data);
       } catch (error) {
@@ -37,7 +40,8 @@ const VirtualNetworkView = ({
     const vnetName = selectedResource.name;
     
     // Send request to backend to add subnet
-    const response = await fetch(`http://localhost:3001/api/vnets/${vnetName}/subnets`, {
+    //const response = await fetch(`http://localhost:3001/api/vnets/${vnetName}/subnets`,
+    const response = await fetch(`${AZURE_API_BASE_URL}/api/vnets/${vnetName}/subnets`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -63,7 +67,9 @@ const handleDeleteSubnet = async (subnetName) => {
     const vnetName = selectedResource.name;
 
     const response = await fetch(
-      `http://localhost:3001/api/vnets/${vnetName}/subnets/${subnetName}`,
+     // `http://localhost:3001/api/vnets/${vnetName}/subnets/${subnetName}`,
+      `${AZURE_API_BASE_URL}/api/vnets/${vnetName}/subnets/${subnetName}`,
+      
       {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
@@ -103,7 +109,8 @@ const handleUpdateSubnet = async () => {
     const vnetName = selectedResource.name;
 
     const response = await fetch(
-      `http://localhost:3001/api/vnets/${vnetName}/subnets/${editingSubnet.name}`,
+     // `http://localhost:3001/api/vnets/${vnetName}/subnets/${editingSubnet.name}`,
+      `${AZURE_API_BASE_URL}/api/vnets/${vnetName}/subnets/${editingSubnet.name}`,
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },

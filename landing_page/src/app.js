@@ -1,6 +1,9 @@
 import React from 'react';
 import './index.css';
 
+const AWS_PORTAL_URL = process.env.REACT_APP_AWS_PORTAL_URL || 'https://awsfrontend.skyclouds.live';
+const AZURE_PORTAL_URL = process.env.REACT_APP_AZURE_PORTAL_URL || 'https://azurefrontend.skyclouds.live';
+
 function App() {
   const redirectTo = (url) => {
     window.location.href = url;
@@ -26,7 +29,8 @@ function App() {
       {/* AWS */}
       <div>
         <button
-          onClick={() => redirectTo('http://localhost:3000')}
+          //onClick={() => redirectTo('http://localhost:3000')}
+          onClick={() => redirectTo(AWS_PORTAL_URL)}
           className="p-3 border border-gray-300 rounded-xl shadow-sm hover:shadow-md transition duration-200"
         >
           <img src="/aws-logo.png" alt="AWS" className="h-12 w-auto" />
@@ -36,7 +40,8 @@ function App() {
       {/* Azure */}
       <div>
         <button
-          onClick={() => redirectTo('http://localhost:5173')}
+          //onClick={() => redirectTo('http://localhost:5173')}
+          onClick={() => redirectTo(AZURE_PORTAL_URL)}
           className="p-3 border border-gray-300 rounded-xl shadow-sm hover:shadow-md transition duration-200"
         >
           <img src="/azure-logo.png" alt="Azure" className="h-12 w-auto" />

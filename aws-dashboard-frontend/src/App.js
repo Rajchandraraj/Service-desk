@@ -10,8 +10,13 @@ import BillingDashboard from './pages/billinginformation.js'; // <-- Sahi file k
 import axios from 'axios';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
 
-const BACKEND_URL = 'http://localhost:5000';
-const API_BASE_URL = 'http://localhost:5001'; // <-- Add your API base URL here
+//const BACKEND_URL = 'http://localhost:5000';
+//const API_BASE_URL = 'http://localhost:5001'; // <-- Add your API base URL here
+//const FRONTEND_URL = 'http://localhost:3002';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001';
+const FRONTEND_URL = process.env.REACT_APP_FRONTEND_URL || 'http://localhost:3002';
 
 
 function Placeholder({ title }) {
@@ -235,8 +240,8 @@ function SecurityTab() {
     setPciLoading(true);
     try {
       const [ec2Res, s3Res] = await Promise.all([
-        fetch(`http://localhost:5000/security/ec2?region=${region}`).then(r => r.json()),
-        fetch(`http://localhost:5000/security/s3?region=${region}`).then(r => r.json())
+        fetch(`${BACKEND_URL}/security/ec2?region=${region}`).then(r => r.json()),
+        fetch(`${BACKEND_URL}/security/s3?region=${region}`).then(r => r.json())
       ]);
       if (ec2Res.error || s3Res.error) {
         setPciError(ec2Res.error || s3Res.error);
@@ -253,7 +258,7 @@ function SecurityTab() {
     clearAllResults();
     setFoundationLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/security/foundation?region=${region}`);
+      const res = await fetch(`${BACKEND_URL}/security/foundation?region=${region}`);
       const data = await res.json();
       if (data.error) setFoundationError(data.error);
       else setFoundationResults(data);
@@ -518,7 +523,7 @@ function App() {
           src="/rapyder.png"
           alt="Logo"
           className="h-10 cursor-pointer"
-          onClick={() => window.location.href = 'http://localhost:3002'}
+          onClick={() => window.location.href = FRONTEND_URL}
         />
         <h1 className="text-2xl">Welcome to Rapyder Service Desk</h1>
       </header>
@@ -719,7 +724,7 @@ function AppWithRouter() {
             src="/rapyder.png"
             alt="Logo"
             className="h-10 cursor-pointer"
-            onClick={() => window.location.href = 'http://localhost:3002'}
+            onClick={() => window.location.href = FRONTEND_URL}
           />
           <h1 className="text-2xl">Welcome to Rapyder Service Desk</h1>
         </header>

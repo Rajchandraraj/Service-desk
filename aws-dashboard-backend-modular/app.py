@@ -21,7 +21,7 @@ app.register_blueprint(utility_bp, url_prefix='/utility')  # <-- Add this line
 app.register_blueprint(ansible_api_bp, url_prefix='/api/ansible')  # <-- Add this line
 
 # --- Add this route below ---
-'''@app.route('/ansible-api/health', methods=['GET'])
+@app.route('/ansible-api/health', methods=['GET'])
 def check_ansible_api():
     """Proxy health check to Ansible API"""
     try:

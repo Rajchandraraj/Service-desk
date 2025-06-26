@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import ResourceList from "../components/ResourceList";
 import ResourceDetails from "../components/ResourceDetails";
 
+const AZURE_API_BASE_URL = process.env.REACT_APP_AZURE_API_BASE_URL || 'http://localhost:3001';
+
 const StorageAccountView = ({
   selectedResource,
   onSelectResource,
@@ -22,7 +24,8 @@ const StorageAccountView = ({
   useEffect(() => {
     const fetchStorageAccounts = async () => {
       try {
-        const response = await fetch("http://localhost:3001/api/storage-accounts");
+        //const response = await fetch("http://localhost:3001/api/storage-accounts");
+        const response = await fetch(`${AZURE_API_BASE_URL}/api/storage-accounts`);
         const data = await response.json();
         setStorageAccounts(data);
       } catch (error) {
@@ -46,7 +49,8 @@ const StorageAccountView = ({
 
       switch (activeTab) {
         case "blob":
-          endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/blob-containers`;
+          //endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/blob-containers`;
+          endpoint = `${AZURE_API_BASE_URL}/api/storage-accounts/${accountName}/blob-containers`;
           body = {
             resourceGroupName,
             containerName: formData.name,
@@ -54,7 +58,8 @@ const StorageAccountView = ({
           };
           break;
         case "fileShare":
-          endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/file-shares`;
+          //endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/file-shares`;
+          endpoint = `${AZURE_API_BASE_URL}/api/storage-accounts/${accountName}/file-shares`;
           body = {
             resourceGroupName,
             shareName: formData.name,
@@ -62,14 +67,16 @@ const StorageAccountView = ({
           };
           break;
         case "table":
-          endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/tables`;
+          //endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/tables`;
+          endpoint = `${AZURE_API_BASE_URL}/api/storage-accounts/${accountName}/tables`;
           body = {
             resourceGroupName,
             tableName: formData.name,
           };
           break;
         case "queue":
-          endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/queues`;
+          //endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/queues`;
+          endpoint = `${AZURE_API_BASE_URL}/api/storage-accounts/${accountName}/queues`;
           body = {
             resourceGroupName,
             queueName: formData.name,
@@ -112,16 +119,21 @@ const StorageAccountView = ({
 
       switch (activeTab) {
         case "blob":
-          endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/blob-containers/${resourceName}`;
+          //endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/blob-containers/${resourceName}`;
+          endpoint = `${AZURE_API_BASE_URL}/api/storage-accounts/${accountName}/blob-containers/${resourceName}`;
+          
           break;
         case "fileShare":
-          endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/file-shares/${resourceName}`;
+         // endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/file-shares/${resourceName}`;
+          endpoint = `${AZURE_API_BASE_URL}/api/storage-accounts/${accountName}/file-shares/${resourceName}`;
           break;
         case "table":
-          endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/tables/${resourceName}`;
+         // endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/tables/${resourceName}`;
+          endpoint = `${AZURE_API_BASE_URL}/api/storage-accounts/${accountName}/tables/${resourceName}`;
           break;
         case "queue":
-          endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/queues/${resourceName}`;
+          //endpoint = `http://localhost:3001/api/storage-accounts/${accountName}/queues/${resourceName}`;
+          endpoint = `${AZURE_API_BASE_URL}/api/storage-accounts/${accountName}/queues/${resourceName}`;
           break;
         default:
           throw new Error("Invalid resource type");
