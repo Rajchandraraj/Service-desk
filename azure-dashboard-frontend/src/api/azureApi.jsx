@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:3001/api";
+const API_BASE = "https://azurebackend.skyclouds.live/api";
 
 const fetchApi = async (endpoint, options = {}) => {
   const response = await fetch(`${API_BASE}${endpoint}`, options);
