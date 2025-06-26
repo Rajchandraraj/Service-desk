@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { API_BASE_URL } from '../config';
 
+
 function S3CreateForm({ region }) {
   const [bucketName, setBucketName] = useState('');
   const [blockPublicAccess, setBlockPublicAccess] = useState(true);
@@ -33,6 +34,7 @@ function S3CreateForm({ region }) {
         body: JSON.stringify(payload),
       });
       const result = await res.json();
+      console.log(result);
       setResponseMsg(result.message);
     } catch (err) {
       setResponseMsg('Failed to create bucket');

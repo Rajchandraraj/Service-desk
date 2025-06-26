@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import EC2Dashboard from './pages/EC2Dashboard.js';
 import MonitoringDashboard from './pages/MonitoringDashboard.js';
 import S3CreateForm from './pages/S3CreateForm.js';
@@ -8,9 +8,11 @@ import VPCCreateForm from './pages/VPCCreateForm.js';
 import ECSCreateForm from './pages/ECSCreateForm.js';
 import BillingDashboard from './pages/billinginformation.js'; // <-- Sahi file ka import
 import axios from 'axios';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
 
 const BACKEND_URL = 'http://localhost:5000';
 const API_BASE_URL = 'http://localhost:5001'; // <-- Add your API base URL here
+
 
 function Placeholder({ title }) {
   return (
@@ -196,6 +198,7 @@ function S3SecurityChecks({ region }) {
 // ...existing imports...
 
 function SecurityTab() {
+  const navigate = useNavigate();
   const [expanded, setExpanded] = useState(null);
   const [region, setRegion] = useState('us-east-1');
   const [pciResults, setPciResults] = useState(null);
@@ -281,7 +284,10 @@ function SecurityTab() {
         <label className="font-bold text-lg text-gray-700">Region:</label>
         <select
           value={region}
-          onChange={e => setRegion(e.target.value)}
+          onChange={e => {
+            setRegion(e.target.value);
+            navigate(`/security/${expanded || 'pci'}/${e.target.value}`);
+          }}
           className="border p-2 rounded text-base font-semibold"
         >
           <option value="us-east-1">us-east-1</option>
@@ -290,14 +296,20 @@ function SecurityTab() {
         </select>
         <button
           className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl font-bold text-base shadow hover:scale-105 transition"
-          onClick={handlePCI}
+          onClick={async () => {
+            navigate(`/security/pci/${region}`);
+            await handlePCI();
+          }}
           disabled={pciLoading}
         >
           {pciLoading ? 'Running PCI...' : 'PCI Checks'}
         </button>
         <button
           className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-4 py-2 rounded-xl font-bold text-base shadow hover:scale-105 transition"
-          onClick={handleAWSFoundation}
+          onClick={async () => {
+            navigate(`/security/foundation/${region}`);
+            await handleAWSFoundation();
+          }}
           disabled={foundationLoading}
         >
           {foundationLoading ? 'Running Foundation...' : 'AWS Foundation Checks'}
@@ -306,24 +318,32 @@ function SecurityTab() {
 
       {/* EC2/S3 buttons row - Always visible below region+PCI/Foundation */}
       <div className="flex gap-3 mb-6">
+        {/* EC2 Security Checks button */}
         <button
           className={`min-w-[150px] px-3 py-2 rounded-lg font-semibold text-sm shadow transition 
             ${expanded === 'ec2'
               ? 'bg-gradient-to-r from-blue-600 to-blue-400 text-white scale-105'
               : 'bg-white border border-blue-300 text-blue-700 hover:bg-blue-50'}`}
-          onClick={() => handleExpand('ec2')}
+          onClick={() => {
+            navigate(`/security/EC2-Security-Checks/${region}`);
+            handleExpand('ec2');
+          }}
         >
           <span className="inline-block mr-2 align-middle">
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path fill="currentColor" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><rect width="20" height="8" x="2" y="7" fill="none" stroke="currentColor" strokeWidth="2" rx="2"/><path fill="currentColor" d="M8 11h8v2H8z"/></svg>
           </span>
           EC2 Security Checks
         </button>
+        {/* S3 Security Checks button */}
         <button
           className={`min-w-[150px] px-3 py-2 rounded-lg font-semibold text-sm shadow transition 
             ${expanded === 's3'
               ? 'bg-gradient-to-r from-green-600 to-green-400 text-white scale-105'
               : 'bg-white border border-green-300 text-green-700 hover:bg-green-50'}`}
-          onClick={() => handleExpand('s3')}
+          onClick={() => {
+            navigate(`/security/S3-Security-Checks/${region}`);
+            handleExpand('s3');
+          }}
         >
           <span className="inline-block mr-2 align-middle">
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
@@ -485,6 +505,7 @@ function SecurityTab() {
 // --- Rest of your unchanged App.js code below ---
 
 function App() {
+  
   const [activeTab, setActiveTab] = useState('Resource management');
   const [resourceTab, setResourceTab] = useState('EC2');
   const [region, setRegion] = useState('us-east-1');
@@ -600,6 +621,7 @@ function App() {
   );
 }
 
+
 function renderDetails(item) {
   // Helper for rules
   const renderRule = (rule, idx) => (
@@ -673,4 +695,199 @@ function renderDetails(item) {
   return String(item);
 }
 
-export default App;
+function MainNav() {
+  const navigate = useNavigate();
+  return (
+    <nav className="flex space-x-4 mt-4">
+      <button onClick={() => navigate('/monitoring')} className="px-4 py-2 rounded bg-gray-200">Monitoring</button>
+      <button onClick={() => navigate('/resourcemanagement/ec2')} className="px-4 py-2 rounded bg-gray-200">Resource Management</button>
+      <button onClick={() => navigate('/resourcecreation/s3')} className="px-4 py-2 rounded bg-gray-200">Resource Creation</button>
+      <button onClick={() => navigate('/standaloneautomation')} className="px-4 py-2 rounded bg-gray-200">Standalone Automation</button>
+      <button onClick={() => navigate('/billinginformation')} className="px-4 py-2 rounded bg-gray-200">Billing Information</button>
+      <button onClick={() => navigate('/security')} className="px-4 py-2 rounded bg-gray-200">Security</button>
+    </nav>
+  );
+}
+
+// Place this just before export default App;
+function AppWithRouter() {
+  return (
+    <BrowserRouter>
+      <div className="p-4 font-sans">
+        <header className="flex items-center justify-between bg-orange-500 p-4 text-white rounded-lg shadow-md">
+          <img
+            src="/rapyder.png"
+            alt="Logo"
+            className="h-10 cursor-pointer"
+            onClick={() => window.location.href = 'http://localhost:3002'}
+          />
+          <h1 className="text-2xl">Welcome to Rapyder Service Desk</h1>
+        </header>
+        <MainNav />
+        <Routes>
+          <Route path="/monitoring" element={<MonitoringDashboard />} />
+          <Route path="/resourcemanagement/:service?/:region?" element={<ResourceManagementPage />} />
+          <Route path="/resourcecreation/:service?/:region?" element={<ResourceCreationPage />} />
+          
+          <Route path="/standaloneautomation" element={<StandaloneAutomation />} />
+          <Route path="/billinginformation/:start1?/:end1?/:region?/:start2?/:end2?" element={<BillingDashboard />} />
+         <Route path="/security/:section?/:region?" element={<SecurityTab />} />
+        </Routes>
+        {/* Chatbot Floating Button and Iframe */}
+        <div className="fixed bottom-4 right-4 z-50">
+          <button
+            onClick={() => {
+              const iframe = document.getElementById('chatbot-frame');
+              iframe.classList.toggle('hidden');
+            }}
+            className="w-20 h-20 rounded-full shadow-xl border-2 border-white overflow-hidden hover:scale-105 transition-transform duration-300"
+            title="Chat with us"
+          >
+            <img
+              src="/chat-icon.jpg"
+              alt="Chatbot"
+              className="w-full h-full object-cover"
+            />
+          </button>
+          <iframe
+            id="chatbot-frame"
+            src="https://www.chatbase.co/chatbot-iframe/MK90PJJDvw9IvDVAnfoD-"
+            className="hidden mt-3 w-[400px] h-[600px] rounded-2xl shadow-2xl border border-gray-300 bg-white"
+            style={{ position: 'absolute', bottom: '90px', right: '0' }}
+          ></iframe>
+        </div>
+      </div>
+    </BrowserRouter>
+  );
+}
+
+export default AppWithRouter;
+function ResourceCreationSelection() {
+  const navigate = useNavigate();
+  return (
+    <div className="flex flex-col gap-4 mt-8">
+      <button onClick={() => navigate('/resourcemanagement/ec2')} className="px-4 py-2 rounded bg-gray-200">Resource Management</button>
+      <button onClick={() => navigate('/resourcecreation/s3')} className="px-4 py-2 rounded bg-blue-200">Create S3</button>
+      <button onClick={() => navigate('/resourcecreation/ec2')} className="px-4 py-2 rounded bg-blue-200">Create EC2</button>
+      <button onClick={() => navigate('/resourcecreation/vpc')} className="px-4 py-2 rounded bg-blue-200">Create VPC</button>
+      <button onClick={() => navigate('/resourcecreation/ecs')} className="px-4 py-2 rounded bg-blue-200">Create ECS</button>
+    </div>
+  );
+}
+
+function ResourceCreationPage() {
+  const params = useParams();
+  const navigate = useNavigate();
+
+  // Service aur region ko URL se lo, default agar nahi ho to
+  const serviceFromUrl = (params.service || 's3').toUpperCase();
+  const regionFromUrl = params.region || 'us-east-1';
+
+  // Jab region change ho, URL bhi update karo
+  const handleRegionChange = (e) => {
+    const newRegion = e.target.value;
+    navigate(`/resourcecreation/${serviceFromUrl.toLowerCase()}/${newRegion}`);
+  };
+
+  // Jab service change ho, URL bhi update karo
+  const handleServiceChange = (e) => {
+    const newService = e.target.value;
+    navigate(`/resourcecreation/${newService.toLowerCase()}/${regionFromUrl}`);
+  };
+
+  // Service ke hisaab se form render karo
+  let form = null;
+  if (serviceFromUrl === 'S3') form = <S3CreateForm region={regionFromUrl} />;
+  else if (serviceFromUrl === 'EC2') form = <EC2CreateForm region={regionFromUrl} />;
+  else if (serviceFromUrl === 'VPC') form = <VPCCreateForm region={regionFromUrl} />;
+  else if (serviceFromUrl === 'ECS') form = <ECSCreateForm region={regionFromUrl} />;
+  else form = <S3CreateForm region={regionFromUrl} />; // default
+
+  return (
+    <div className="mt-4">
+      <div className="mb-4">
+        <label className="font-medium mr-2">Region:</label>
+        <select
+          value={regionFromUrl}
+          onChange={handleRegionChange}
+          className="border p-1 rounded"
+        >
+          <option value="us-east-1">us-east-1</option>
+          <option value="us-west-2">us-west-2</option>
+          <option value="ap-south-1">ap-south-1</option>
+        </select>
+      </div>
+
+      <div className="mb-4">
+        <label className="font-medium mr-2">Select Service:</label>
+        <select
+          value={serviceFromUrl}
+          onChange={handleServiceChange}
+          className="border p-1 rounded"
+        >
+          <option value="S3">S3</option>
+          <option value="EC2">EC2</option>
+          <option value="VPC">VPC</option>
+          <option value="ECS">ECS</option>
+        </select>
+      </div>
+
+      {form}
+    </div>
+  );
+}
+
+function ResourceManagementPage() {
+  const params = useParams();
+  const navigate = useNavigate();
+
+  // Service aur region ko URL se lo, default agar nahi ho to
+  const serviceFromUrl = (params.service || 'ec2').toUpperCase();
+  const regionFromUrl = params.region || 'us-east-1';
+
+  // Jab region change ho, URL bhi update karo
+  const handleRegionChange = (e) => {
+    const newRegion = e.target.value;
+    navigate(`/resourcemanagement/${serviceFromUrl.toLowerCase()}/${newRegion}`);
+  };
+
+  // Jab service/resourceTab change ho, URL bhi update karo
+  const handleServiceChange = (tab) => {
+    navigate(`/resourcemanagement/${tab.toLowerCase()}/${regionFromUrl}`);
+  };
+
+  return (
+    <div className="mt-4">
+      <div className="mb-4">
+        <label className="font-medium mr-2">Region:</label>
+        <select
+          value={regionFromUrl}
+          onChange={handleRegionChange}
+          className="border p-1 rounded"
+        >
+          <option value="us-east-1">us-east-1</option>
+          <option value="us-west-2">us-west-2</option>
+          <option value="ap-south-1">ap-south-1</option>
+        </select>
+      </div>
+
+      <nav className="flex space-x-4 mb-4">
+        {['EC2', 'S3', 'VPC', 'RDS'].map(tab => (
+          <button
+            key={tab}
+            onClick={() => handleServiceChange(tab)}
+            className={`px-4 py-2 rounded ${serviceFromUrl === tab ? 'bg-green-600 text-white' : 'bg-gray-200'}`}
+          >
+            {tab}
+          </button>
+        ))}
+      </nav>
+
+      {serviceFromUrl === 'EC2' ? (
+        <EC2Dashboard region={regionFromUrl} />
+      ) : (
+        <Placeholder title={serviceFromUrl} />
+      )}
+    </div>
+  );
+}

@@ -11,7 +11,9 @@ def list_s3_buckets(region):
         return jsonify([]), 500
 
 def create_s3_bucket():
-    data = request.json
+    if request.method == 'OPTIONS':
+        return '', 200
+    data = request.get_json(force=True)
     bucket_name = data.get('bucket_name')
     region = data.get('region')
     block_public_access = data.get('block_public_access', True)
@@ -50,9 +52,10 @@ def create_s3_bucket():
                 Bucket=bucket_name,
                 Tagging={'TagSet': tags}
             )
-        return jsonify({'status': 'success', 'message': f'S3 bucket {bucket_name} created successfully'})
+        return jsonify({'status': 'success', 'message': f'S3 bucket {bucket_name} created successfully'}),201
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        print("S3 Create Error:", e) 
+        return jsonify({'status': 'error', 'message': str(e)}), 400
 
 def list_instances(region):
     ec2 = boto3.client('ec2', region_name=region)

@@ -2,6 +2,7 @@ from flask import jsonify, request
 import boto3
 from botocore.exceptions import ClientError
 
+
 def ec2_security_checks():
     region = request.args.get('region')
     results = {

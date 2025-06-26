@@ -2,6 +2,8 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 import datetime
 
+
+
 from routes.ec2_routes import ec2_bp
 from routes.s3_routes import s3_bp
 from routes.security_routes import security_bp
@@ -19,7 +21,7 @@ app.register_blueprint(utility_bp, url_prefix='/utility')  # <-- Add this line
 app.register_blueprint(ansible_api_bp, url_prefix='/api/ansible')  # <-- Add this line
 
 # --- Add this route below ---
-@app.route('/ansible-api/health', methods=['GET'])
+'''@app.route('/ansible-api/health', methods=['GET'])
 def check_ansible_api():
     """Proxy health check to Ansible API"""
     try:
@@ -35,7 +37,7 @@ def check_ansible_api():
             'ansible_api_status': 'unhealthy',
             'error': str(e),
             'timestamp': datetime.datetime.utcnow().isoformat()
-        }), 500
+        }), 500'''
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { API_BASE_URL } from '../config';
 
+
 // --- Helper to render details (array or string/number) ---
 function renderDetails(item) {
   if (item === undefined || item === null) {
@@ -467,19 +468,20 @@ function FoundationChecksTable({ foundationChecks }) {
             <tr>
               <th className="px-4 py-2 border-b text-left font-bold">Check Name</th>
               <th className="px-4 py-2 border-b text-center font-bold">Result</th>
-              <th className="px-4 py-2 border-b text-left font-bold">Description</th>
+              <th className="px-4 py-2 border-b text-left font-bold">Reason</th>
             </tr>
           </thead>
           <tbody>
             {foundationChecks.map((check, idx) => (
               <tr key={idx}>
-                <td className="px-4 py-2 border-b">{check.name}</td>
+                <td className="px-4 py-2 border-b">{check.Check}</td>
                 <td className="px-4 py-2 border-b text-center">
-                  {check.status === 'PASS' && <span className="text-green-600 font-bold">Passed</span>}
-                  {check.status === 'FAIL' && <span className="text-red-600 font-bold">Failed</span>}
-                  {check.status !== 'PASS' && check.status !== 'FAIL' && <span className="text-gray-400">{check.status}</span>}
+                  {check.Status === 'PASS' && <span className="text-green-600 font-bold">Passed</span>}
+                  {check.Status === 'FAIL' && <span className="text-red-600 font-bold">Failed</span>}
                 </td>
-                <td className="px-4 py-2 border-b">{check.description}</td>
+                <td className="px-4 py-2 border-b">
+                  {check.Status === 'FAIL' ? check.Description : '-'}
+                </td>
               </tr>
             ))}
           </tbody>

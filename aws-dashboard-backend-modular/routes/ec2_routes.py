@@ -15,7 +15,7 @@ ec2_bp = Blueprint('ec2', __name__)
 def health_check():
     return jsonify({"status": "ok"})
 
-@ec2_bp.route('/ansible-api/health', methods=['GET'])
+@ec2_bp.route('/health', methods=['GET'])
 def check_ansible_api():
     return jsonify({"status": "ok"})
 
@@ -43,7 +43,7 @@ def stop(region, instance_id):
 def alarms(region):
     return get_alarms(region)
 
-@ec2_bp.route('/ec2/vpcs/<region>', methods=['GET'])
+@ec2_bp.route('/vpcs/<region>', methods=['GET'])
 def vpcs(region):
     return get_vpcs(region)
 
@@ -55,19 +55,19 @@ def create_ec2_route():
 def create_vpc_route():
     return create_vpc()
 
-@ec2_bp.route('/ec2/subnets/<region>/<vpc_id>', methods=['GET'])
+@ec2_bp.route('/subnets/<region>/<vpc_id>', methods=['GET'])
 def subnets(region, vpc_id):
     return get_subnets(region, vpc_id)
 
-@ec2_bp.route('/ec2/security-groups/<region>/<vpc_id>', methods=['GET'])
+@ec2_bp.route('/security-groups/<region>/<vpc_id>', methods=['GET'])
 def security_groups(region, vpc_id):
     return get_security_groups(region, vpc_id)
 
-@ec2_bp.route('/ec2/key-pairs/<region>', methods=['GET'])
+@ec2_bp.route('/key-pairs/<region>', methods=['GET'])
 def key_pairs(region):
     return get_key_pairs(region)
 
-@ec2_bp.route('/ec2/iam-profiles/<region>', methods=['GET'])
+@ec2_bp.route('/iam-profiles/<region>', methods=['GET'])
 def iam_profiles(region):
     return get_iam_instance_profiles(region)
 
@@ -106,8 +106,9 @@ def installation_ready(region):
 def regions():
     return list_regions()
 
-@ec2_bp.route('/metrics/<region>/<instance_id>', methods=['GET'])
+@ec2_bp.route('/ec2/metrics/<region>/<instance_id>', methods=['GET'])
 def instance_metrics(region, instance_id):
+    from controllers.ec2_controller import get_instance_metrics
     return get_instance_metrics(region, instance_id)
 
 @ec2_bp.route('/create-ecs', methods=['POST'])

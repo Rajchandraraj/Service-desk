@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-export const API_BASE_URL = "http://localhost:5000";
-export const ANSIBLE_API_BASE = "http://43.204.109.213:8000";
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+export const ANSIBLE_API_BASE = process.env.REACT_APP_ANSIBLE_API_BASE;
 
 // EC2 Instances
 fetch(`${API_BASE_URL}/ec2/instances/us-east-1`)

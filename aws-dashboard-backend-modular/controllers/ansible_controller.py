@@ -1,6 +1,8 @@
 import datetime
 import requests
-from flask import jsonify
+from flask import Blueprint, jsonify
+
+ansible_api_bp = Blueprint('ansible_api', __name__)
 
 @ansible_api_bp.route('/ansible-api/health', methods=['GET'])
 def check_ansible_api():

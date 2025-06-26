@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL, ANSIBLE_API_BASE } from '../config';
+
+
+
 
 // Configuration for Ansible API
-const ANSIBLE_API_BASE = 'http://43.204.109.213:8000';
+//const ANSIBLE_API_BASE = 'http://43.204.109.213:8000';
+//const ANSIBLE_API_BASE = process.env.REACT_APP_ANSIBLE_API_BASE;
+
 
 // Installation Service Functions
 class InstallationService {

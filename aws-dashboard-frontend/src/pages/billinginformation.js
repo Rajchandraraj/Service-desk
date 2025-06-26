@@ -6,9 +6,11 @@ import {
   LineChart, Line, ResponsiveContainer
 } from 'recharts';
 import { API_BASE_URL } from '../config';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
 const BillingDashboard = () => {
-  const [region, setRegion] = useState("us-east-1");
+  const region = "us-east-1"; // hardcoded
+
   const [start1, setStart1] = useState("2025-06-01");
   const [end1, setEnd1] = useState("2025-06-05");
   const [start2, setStart2] = useState("2025-06-06");
@@ -17,14 +19,17 @@ const BillingDashboard = () => {
   const [trendData, setTrendData] = useState([]);
   const [anomalySummary, setAnomalySummary] = useState(null);
   const chartRef = useRef();
+  const params = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const fetchBillingComparison = useCallback(async () => {
     try {
       const fetchRange = async (start, end) => {
-    const res = await axios.get(`${API_BASE_URL}/utility/api/billing`, {
-  params: { start, end, region }
-});
-   return res.data.ResultsByTime;
+  const res = await axios.get(`${API_BASE_URL}/utility/api/billing`, {
+    params: { start, end, region }
+  });
+  return res.data.ResultsByTime;
 };
 
       const [range1, range2] = await Promise.all([
@@ -79,6 +84,15 @@ const BillingDashboard = () => {
     fetchAnomalySummary();
   }, [fetchBillingComparison]);
 
+  // Sync state with URL params on mount or when params change
+useEffect(() => {
+  const params = new URLSearchParams(location.search);
+  setStart1(params.get('start1') || "2025-06-01");
+  setEnd1(params.get('end1') || "2025-06-05");
+  setStart2(params.get('start2') || "2025-06-06");
+  setEnd2(params.get('end2') || "2025-06-10");
+}, [location.search]);
+
   const exportAsImage = async () => {
     const canvas = await html2canvas(chartRef.current);
     const link = document.createElement('a');
@@ -96,6 +110,14 @@ const BillingDashboard = () => {
     link.href = URL.createObjectURL(blob);
     link.download = 'billing-comparison.csv';
     link.click();
+  };
+
+  const updateQuery = (newParams) => {
+    const params = new URLSearchParams(location.search);
+    Object.entries(newParams).forEach(([key, value]) => {
+      params.set(key, value);
+    });
+    navigate(`${location.pathname}?${params.toString()}`);
   };
 
   const today = new Date().toISOString().split("T")[0];
@@ -118,18 +140,54 @@ const BillingDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div>
           <h4 className="font-semibold">Range 1</h4>
-          <input type="date" max={today} value={start1} onChange={e => setStart1(e.target.value)} className="border p-2 mr-2" />
-          <input type="date" max={today} value={end1} onChange={e => setEnd1(e.target.value)} className="border p-2" />
+          <input
+  type="date"
+  max={today}
+  value={start1}
+  onChange={e => {
+    setStart1(e.target.value);
+    updateQuery({ start1: e.target.value });
+  }}
+  className="border p-2 mr-2"
+/>
+<input
+  type="date"
+  max={today}
+  value={end1}
+  onChange={e => {
+    setEnd1(e.target.value);
+    updateQuery({ end1: e.target.value });
+  }}
+  className="border p-2"
+/>
         </div>
         <div>
           <h4 className="font-semibold">Range 2</h4>
-          <input type="date" max={today} value={start2} onChange={e => setStart2(e.target.value)} className="border p-2 mr-2" />
-          <input type="date" max={today} value={end2} onChange={e => setEnd2(e.target.value)} className="border p-2" />
+          <input
+  type="date"
+  max={today}
+  value={start2}
+  onChange={e => {
+    setStart2(e.target.value);
+    updateQuery({ start2: e.target.value });
+  }}
+  className="border p-2 mr-2"
+/>
+<input
+  type="date"
+  max={today}
+  value={end2}
+  onChange={e => {
+    setEnd2(e.target.value);
+    updateQuery({ end2: e.target.value });
+  }}
+  className="border p-2"
+/>
         </div>
       </div>
 
+      {/* Remove region select dropdown */}
       <div className="flex flex-wrap gap-4 mb-6">
-        <input type="text" value={region} onChange={e => setRegion(e.target.value)} placeholder="AWS Region" className="border p-2" />
         <button onClick={fetchBillingComparison} className="bg-blue-600 text-white px-4 py-2 rounded">Compare</button>
         <button onClick={exportAsImage} className="bg-green-600 text-white px-4 py-2 rounded">Export Image</button>
         <button onClick={exportAsCSV} className="bg-gray-800 text-white px-4 py-2 rounded">Export CSV</button>
