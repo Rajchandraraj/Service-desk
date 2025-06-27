@@ -77,7 +77,8 @@ function DataTable() {
                 <td className="px-4 py-2">
                   {row["Download_Link"] ? (
                     <button
-                      onClick={() => handleDownload(row["Download_Link"])}
+                     // onClick={() => handleDownload(row["Download_Link"])}
+	              onClick={() => handleDownload(row["Download_Link"].trim())}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
                     >
                       Download

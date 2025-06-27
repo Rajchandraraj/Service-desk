@@ -15,6 +15,27 @@ app.use(express.json());
 
 let credentials, subscriptionId, resourceClient, subscriptionClient, computeClient, networkClient, storageClient;
 
+// Get subscription info (displayName)
+app.get("/api/subscription", async (req, res) => {
+  try {
+    const subscriptions = [];
+    for await (const sub of subscriptionClient.subscriptions.list()) {
+      subscriptions.push(sub);
+    }
+
+    if (subscriptions.length === 0) {
+      return res.status(404).json({ error: "No subscriptions found" });
+    }
+
+    const displayName = subscriptions[0].displayName || "Unnamed Subscription";
+    res.json({ displayName });
+  } catch (err) {
+    console.error("Error fetching subscription:", err.message);
+    res.status(500).json({ error: "Failed to fetch subscription", details: err.message });
+  }
+});
+
+
 // Initialize Azure clients
 async function initializeAzureClients() {
   try {

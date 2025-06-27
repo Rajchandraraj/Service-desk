@@ -1,6 +1,4 @@
-//const API_BASE = "https://azurebackend.skyclouds.live/api";
-
-const API_BASE = (process.env.REACT_APP_AZURE_API_BASE_URL || "http://localhost:3001") + "/api";
+const API_BASE = "https://azurebackend.skyclouds.live/api";
 
 const fetchApi = async (endpoint, options = {}) => {
   const response = await fetch(`${API_BASE}${endpoint}`, options);

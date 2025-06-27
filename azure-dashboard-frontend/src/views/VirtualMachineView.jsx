@@ -1,9 +1,8 @@
+import React from 'react';
 import { useState } from "react";
 import ResourceList from "../components/ResourceList";
 import ResourceDetails from "../components/ResourceDetails";
 import VmActions from "../components/VmActions";
-
-
 
 const VirtualMachineView = ({
   virtualMachines,

@@ -7,9 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "start": "vite preview"
-    
+    "preview": "vite preview"
   },
   "dependencies": {
     "@azure/arm-storage": "^18.5.0",

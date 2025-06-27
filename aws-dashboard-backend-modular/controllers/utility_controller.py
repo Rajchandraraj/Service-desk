@@ -67,7 +67,7 @@ def anomaly_summary():
 
 def get_presigned_url():
     bucket_name = 'rapyder-automation-document'
-    object_key = request.args.get('key')
+    object_key = request.args.get('key').strip()
     print("Requested S3 key:", repr(object_key))
     if not object_key:
         return jsonify({'error': 'Missing S3 object key'}), 400

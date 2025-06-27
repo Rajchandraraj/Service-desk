@@ -142,7 +142,7 @@ function S3SecurityChecks({ region }) {
     setError('');
     setResults(null);
     try {
-      const res = await fetch(`${BACKEND_URL}/security/s3?region=${region}`);
+      const res = await fetch(`${API_BASE_URL}/security/s3?region=${region}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setResults(data);
@@ -240,8 +240,8 @@ function SecurityTab() {
     setPciLoading(true);
     try {
       const [ec2Res, s3Res] = await Promise.all([
-        fetch(`${BACKEND_URL}/security/ec2?region=${region}`).then(r => r.json()),
-        fetch(`${BACKEND_URL}/security/s3?region=${region}`).then(r => r.json())
+        fetch(`${API_BASE_URL}/security/ec2?region=${region}`).then(r => r.json()),
+        fetch(`${API_BASE_URL}/security/s3?region=${region}`).then(r => r.json())
       ]);
       if (ec2Res.error || s3Res.error) {
         setPciError(ec2Res.error || s3Res.error);
@@ -258,7 +258,7 @@ function SecurityTab() {
     clearAllResults();
     setFoundationLoading(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/security/foundation?region=${region}`);
+      const res = await fetch(`${API_BASE_URL}/security/foundation?region=${region}`);
       const data = await res.json();
       if (data.error) setFoundationError(data.error);
       else setFoundationResults(data);

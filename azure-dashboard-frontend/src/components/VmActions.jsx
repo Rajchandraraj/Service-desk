@@ -1,3 +1,4 @@
+import React from 'react';
 import PropTypes from 'prop-types';
 
 const VmActions = ({ vmName, onStart, onStop, onResize, isResizing }) => {

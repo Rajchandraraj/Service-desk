@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-
+import React from 'react';
 const ResourceTypeSelector = ({ resourceTypes, selectedType, onTypeChange }) => {
   return (
     <div className="mb-4">

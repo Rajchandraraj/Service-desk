@@ -1,5 +1,5 @@
 // src/views/ResourceGroupView.jsx
-
+import React from 'react';
 import ResourceList from "../components/ResourceList";
 import ResourceDetails from "../components/ResourceDetails";
 

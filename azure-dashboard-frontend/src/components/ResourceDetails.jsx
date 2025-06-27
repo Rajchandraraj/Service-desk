@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-
+import React from 'react';
 const ResourceDetails = ({ title, children }) => {
   return (
     <div className="w-full lg:w-2/3">

@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-
+import React from 'react';
 const TabsNavigation = ({ tabs, activeTab, onTabChange }) => {
   return (
     <nav className="mt-6 flex space-x-4 border-b border-gray-300">

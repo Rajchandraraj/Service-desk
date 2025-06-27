@@ -37,7 +37,7 @@ def check_ansible_api():
             'ansible_api_status': 'unhealthy',
             'error': str(e),
             'timestamp': datetime.datetime.utcnow().isoformat()
-        }), 500'''
+        }), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

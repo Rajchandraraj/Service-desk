@@ -1,3 +1,4 @@
+import React from 'react';
 const Header = ({ location, onLocationChange }) => {
   const regions = [
     { value: "centralindia", label: "Central India" },
