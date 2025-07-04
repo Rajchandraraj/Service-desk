@@ -1,40 +1,18 @@
 import React, { useState } from 'react';
-import { API_BASE_URL } from '../config';
 
+// --- Constants ---
+const BACKEND_URL = process.env.REACT_APP_API_BASE_URL;
 
 // --- Helper to render details (array or string/number) ---
 function renderDetails(item) {
-  if (item === undefined || item === null) {
-    return <span>No details available</span>;
-  }
-  if (Array.isArray(item)) {
+   if (Array.isArray(item)) {
     return (
       <ul className="list-disc ml-6">
         {item.map((detail, idx) => (
           <li key={idx}>
-            {typeof detail === 'object' && detail !== null
-              ? (
-                <ul className="ml-4">
-                  {Object.entries(detail).map(([k, v]) => (
-                    <li key={k}>
-                      <b>{k}:</b> {String(v)}
-                    </li>
-                  ))}
-                </ul>
-              )
-              : String(detail)
-            }
-          </li>
-        ))}
-      </ul>
-    );
-  }
-  if (typeof item === 'object' && item !== null) {
-    return (
-      <ul className="ml-6">
-        {Object.entries(item).map(([k, v]) => (
-          <li key={k}>
-            <b>{k}:</b> {String(v)}
+            {typeof detail === 'object'
+              ? Object.entries(detail).map(([k, v]) => `${k}: ${v}`).join(', ')
+              : String(detail)}
           </li>
         ))}
       </ul>
@@ -64,7 +42,7 @@ function EC2SecurityChecks({ region }) {
     setResults(null);
     setShowDetails({});
     try {
-      const res = await fetch(`${API_BASE_URL}/security/ec2?region=${region}`);
+      const res = await fetch(`${BACKEND_URL}/security/ec2?region=${region}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setResults(data);
@@ -125,14 +103,10 @@ function EC2SecurityChecks({ region }) {
                 </div>
               </div>
               {/* Show details if failed and toggled */}
-              {results[check.key] === 'fail' && showDetails[check.key] && (
+              {results[check.key] === 'fail' && showDetails[check.key] && results[`${check.key}_details`] && (
                 <div className="text-sm text-red-700 mt-1 bg-red-50 rounded p-2">
                   <strong>Details:</strong>
-                  {renderDetails(
-                    results[`${check.key}_details`] !== undefined && results[`${check.key}_details`] !== null
-                      ? results[`${check.key}_details`]
-                      : "No details available"
-                  )}
+                  {renderDetails(results[`${check.key}_details`])}
                 </div>
               )}
             </li>
@@ -148,7 +122,6 @@ function S3SecurityChecks({ region }) {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState('');
-  const [showDetails, setShowDetails] = useState({});
 
   const checks = [
     { key: 'public_buckets', label: 'No S3 buckets should be public' },
@@ -161,9 +134,8 @@ function S3SecurityChecks({ region }) {
     setLoading(true);
     setError('');
     setResults(null);
-    setShowDetails({});
     try {
-      const res = await fetch(`${API_BASE_URL}/security/s3?region=${region}`);
+      const res = await fetch(`${BACKEND_URL}/security/s3?region=${region}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setResults(data);
@@ -173,17 +145,10 @@ function S3SecurityChecks({ region }) {
     setLoading(false);
   };
 
-  const handleToggleDetails = (key) => {
-    setShowDetails(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
-
   return (
     <div>
       <button
-        className="bg-green-600 text-white px-4 py-2 rounded mb-4"
+        className="bg-blue-600 text-white px-4 py-2 rounded mb-4"
         onClick={runChecks}
         disabled={loading}
       >
@@ -205,32 +170,18 @@ function S3SecurityChecks({ region }) {
             >
               <div className="flex justify-between items-center">
                 <span>{check.label}</span>
-                <div className="flex items-center gap-2">
-                  {results[check.key] === 'fail' && (
-                    <>
-                      <span className="text-red-600 font-bold">Failed</span>
-                      <button
-                        className="ml-2 px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700 transition"
-                        onClick={() => handleToggleDetails(check.key)}
-                      >
-                        {showDetails[check.key] ? 'Hide' : 'View'}
-                      </button>
-                    </>
-                  )}
-                  {results[check.key] === 'pass' && (
-                    <span className="text-green-600 font-bold">Passed</span>
-                  )}
-                </div>
+                {results[check.key] === 'fail' && (
+                  <span className="text-red-600 font-bold">Failed</span>
+                )}
+                {results[check.key] === 'pass' && (
+                  <span className="text-green-600 font-bold">Passed</span>
+                )}
               </div>
-              {/* Show details if failed and toggled */}
-              {results[check.key] === 'fail' && showDetails[check.key] && (
+              {/* Show details if failed and details exist */}
+              {results[check.key] === 'fail' && results[`${check.key}_details`] && (
                 <div className="text-sm text-red-700 mt-1 bg-red-50 rounded p-2">
                   <strong>Details:</strong>
-                  {renderDetails(
-                    results[`${check.key}_details`] !== undefined && results[`${check.key}_details`] !== null
-                      ? results[`${check.key}_details`]
-                      : "No details available"
-                  )}
+                  {renderDetails(results[`${check.key}_details`])}
                 </div>
               )}
             </li>
@@ -279,8 +230,8 @@ function SecurityTab() {
     setPciLoading(true);
     try {
       const [ec2Res, s3Res] = await Promise.all([
-        fetch(`${API_BASE_URL}/security/ec2?region=${region}`).then(r => r.json()),
-        fetch(`${API_BASE_URL}/security/s3?region=${region}`).then(r => r.json())
+        fetch(`${BACKEND_URL}/security/ec2?region=${region}`).then(r => r.json()),
+        fetch(`${BACKEND_URL}/security/s3?region=${region}`).then(r => r.json())
       ]);
       if (ec2Res.error || s3Res.error) {
         setPciError(ec2Res.error || s3Res.error);
@@ -297,7 +248,7 @@ function SecurityTab() {
     clearAllResults();
     setFoundationLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/security/foundation?region=${region}`);
+      const res = await fetch(`${BACKEND_URL}/security/foundation?region=${region}`);
       const data = await res.json();
       if (data.error) setFoundationError(data.error);
       else setFoundationResults(data);
@@ -450,43 +401,33 @@ function SecurityTab() {
       )}
       {foundationLoading && <div className="text-blue-700 font-semibold mb-2">Running AWS Foundation checks...</div>}
       {foundationError && <div className="text-red-600 mb-2">{foundationError}</div>}
-      {foundationResults && foundationResults.foundation_checks && (
-        <FoundationChecksTable foundationChecks={foundationResults.foundation_checks} />
+      {foundationResults && (
+        <div className="mb-6">
+          <div className="font-bold text-lg mb-2">AWS Foundation Results</div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full border border-gray-300 rounded-lg bg-white text-base">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2 border-b text-left font-bold">Check Name</th>
+                  <th className="px-4 py-2 border-b text-center font-bold">Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(foundationResults).map(([key, value]) => (
+                  <tr key={key}>
+                    <td className="px-4 py-2 border-b">{key.replace(/_/g, ' ')}</td>
+                    <td className="px-4 py-2 border-b text-center">
+                      {value === 'pass' && <span className="text-green-600 font-bold">Passed</span>}
+                      {value === 'fail' && <span className="text-red-600 font-bold">Failed</span>}
+                      {value !== 'pass' && value !== 'fail' && <span className="text-gray-400">{value}</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
-    </div>
-  );
-}
-
-function FoundationChecksTable({ foundationChecks }) {
-  if (!foundationChecks || !Array.isArray(foundationChecks)) return null;
-  return (
-    <div className="mb-6">
-      <div className="font-bold text-lg mb-2">AWS Foundation Results</div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full border border-gray-300 rounded-lg bg-white text-base">
-          <thead>
-            <tr>
-              <th className="px-4 py-2 border-b text-left font-bold">Check Name</th>
-              <th className="px-4 py-2 border-b text-center font-bold">Result</th>
-              <th className="px-4 py-2 border-b text-left font-bold">Reason</th>
-            </tr>
-          </thead>
-          <tbody>
-            {foundationChecks.map((check, idx) => (
-              <tr key={idx}>
-                <td className="px-4 py-2 border-b">{check.Check}</td>
-                <td className="px-4 py-2 border-b text-center">
-                  {check.Status === 'PASS' && <span className="text-green-600 font-bold">Passed</span>}
-                  {check.Status === 'FAIL' && <span className="text-red-600 font-bold">Failed</span>}
-                </td>
-                <td className="px-4 py-2 border-b">
-                  {check.Status === 'FAIL' ? check.Description : '-'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }

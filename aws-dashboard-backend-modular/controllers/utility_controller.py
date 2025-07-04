@@ -295,6 +295,8 @@ def get_security_s3():
         return jsonify(results)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+
 
 def get_foundation_checks():
     region = request.args.get('region', 'us-east-1')
@@ -416,4 +418,5 @@ def get_ec2_iam_profiles(region):
         profiles = ec2.describe_iam_instance_profile_associations()
         return jsonify({'iam_profiles': profiles.get('IamInstanceProfileAssociations', [])})
     except Exception as e:
+        print("S3 check failed:", e)
         return jsonify({'error': str(e)}), 500

@@ -1,4 +1,4 @@
-from flask import jsonify, request
+'''from flask import jsonify, request
 
 def foundation_security_checks():
     region = request.args.get('region', 'us-east-1')
@@ -54,4 +54,4 @@ def check_root_mfa(region): return True
 def check_password_policy(region): return False
 def check_cloudtrail(region): return True
 def check_s3_public_block(region): return True
-def check_billing_alerts(region): return False
+def check_billing_alerts(region): return False'''

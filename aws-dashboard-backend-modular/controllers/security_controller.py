@@ -1,6 +1,121 @@
-from flask import jsonify, request
+from flask import jsonify, request, current_app
 import boto3
 from botocore.exceptions import ClientError
+
+def get_foundation_checks():
+    region = request.args.get('region', 'us-east-1')
+    results = {
+        "root_mfa_enabled": "unknown",
+        "root_mfa_enabled_details": [],
+        "iam_mfa_enabled": "unknown",
+        "iam_mfa_enabled_details": [],
+        "cloudtrail_enabled": "unknown",
+        "cloudtrail_enabled_details": [],
+        "password_policy_strong": "unknown",
+        "password_policy_strong_details": [],
+        "s3_block_public_access": "unknown",
+        "s3_block_public_access_details": [],
+        "billing_alerts_enabled": "unknown",
+        "billing_alerts_enabled_details": []
+    }
+    try:
+        # Root account MFA enabled
+        iam = boto3.client('iam')
+        try:
+            mfa_devices = iam.list_mfa_devices(UserName='root')['MFADevices']
+            if mfa_devices:
+                results["root_mfa_enabled"] = "pass"
+            else:
+                results["root_mfa_enabled"] = "fail"
+                results["root_mfa_enabled_details"] = [{"reason": "Root account does not have MFA enabled"}]
+        except Exception as e:
+            results["root_mfa_enabled"] = "fail"
+            results["root_mfa_enabled_details"] = [{"reason": f"Error: {str(e)}"}]
+
+        # IAM users MFA enabled
+        try:
+            users = iam.list_users()['Users']
+            fail = False
+            no_mfa_users = []
+            for user in users:
+                mfa = iam.list_mfa_devices(UserName=user['UserName'])['MFADevices']
+                if not mfa:
+                    fail = True
+                    no_mfa_users.append({"user": user['UserName'], "reason": "No MFA device"})
+            if fail:
+                results["iam_mfa_enabled"] = "fail"
+                results["iam_mfa_enabled_details"] = no_mfa_users
+            else:
+                results["iam_mfa_enabled"] = "pass"
+        except Exception as e:
+            results["iam_mfa_enabled"] = "fail"
+            results["iam_mfa_enabled_details"] = [{"reason": f"Error: {str(e)}"}]
+
+        # CloudTrail enabled
+        try:
+            ct = boto3.client('cloudtrail', region_name=region)
+            trails = ct.describe_trails()['trailList']
+            enabled = any(t.get('HomeRegion') == region and t.get('IsMultiRegionTrail', False) for t in trails)
+            if enabled:
+                results["cloudtrail_enabled"] = "pass"
+            else:
+                results["cloudtrail_enabled"] = "fail"
+                results["cloudtrail_enabled_details"] = [{"reason": "CloudTrail is not enabled in this region"}]
+        except Exception as e:
+            results["cloudtrail_enabled"] = "fail"
+            results["cloudtrail_enabled_details"] = [{"reason": f"Error: {str(e)}"}]
+
+        # Password policy strong
+        try:
+            policy = iam.get_account_password_policy()['PasswordPolicy']
+            strong = (
+                policy.get('MinimumPasswordLength', 0) >= 8 and
+                policy.get('RequireSymbols', False) and
+                policy.get('RequireNumbers', False) and
+                policy.get('RequireUppercaseCharacters', False) and
+                policy.get('RequireLowercaseCharacters', False)
+            )
+            if strong:
+                results["password_policy_strong"] = "pass"
+            else:
+                results["password_policy_strong"] = "fail"
+                results["password_policy_strong_details"] = [{"reason": "Password policy is not strong"}]
+        except Exception as e:
+            results["password_policy_strong"] = "fail"
+            results["password_policy_strong_details"] = [{"reason": f"Error: {str(e)}"}]
+
+        # S3 block public access
+        try:
+            s3 = boto3.client('s3control')
+            account_id = boto3.client('sts').get_caller_identity()['Account']
+            public_access = s3.get_public_access_block(AccountId=account_id)['PublicAccessBlockConfiguration']
+            if all(public_access.values()):
+                results["s3_block_public_access"] = "pass"
+            else:
+                results["s3_block_public_access"] = "fail"
+                results["s3_block_public_access_details"] = [{"reason": "S3 public access block is not fully enabled"}]
+        except Exception as e:
+            results["s3_block_public_access"] = "fail"
+            results["s3_block_public_access_details"] = [{"reason": f"Error: {str(e)}"}]
+
+        # Billing alerts enabled
+        try:
+            cw = boto3.client('cloudwatch', region_name=region)
+            alarms = cw.describe_alarms()['MetricAlarms']
+            billing_alarms = [a for a in alarms if 'Billing' in a.get('AlarmName', '')]
+            if billing_alarms:
+                results["billing_alerts_enabled"] = "pass"
+            else:
+                results["billing_alerts_enabled"] = "fail"
+                results["billing_alerts_enabled_details"] = [{"reason": "No billing alert alarms found"}]
+        except Exception as e:
+            results["billing_alerts_enabled"] = "fail"
+            results["billing_alerts_enabled_details"] = [{"reason": f"Error: {str(e)}"}]
+
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 def ec2_security_checks():
     region = request.args.get('region')
     results = {
@@ -111,7 +226,7 @@ def ec2_security_checks():
         else:
             results["vpc_flow_logs_details"] = []
 
-        return jsonify(results)
+        return jsonify(results), 200
     except ClientError as e:
         return jsonify({'error': str(e)}), 500
     except Exception as e:
@@ -192,22 +307,32 @@ def s3_security_checks():
             results["logging_enabled"] = "fail"
             results["logging_enabled_details"] = not_logged
 
-        return jsonify(results)
+        return jsonify(results), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 def pci_security_checks():
     region = request.args.get('region')
+    # Run EC2 checks
     with current_app.test_request_context(f'/security/ec2?region={region}'):
         ec2_resp = ec2_security_checks()
+    # Run S3 checks
     with current_app.test_request_context(f'/security/s3?region={region}'):
         s3_resp = s3_security_checks()
+
+    # Handle tuple responses (Flask error responses)
     ec2_json = ec2_resp[0] if isinstance(ec2_resp, tuple) else ec2_resp
     s3_json = s3_resp[0] if isinstance(s3_resp, tuple) else s3_resp
+
+    # If either is an error, return error
+    if hasattr(ec2_json, "status_code") and ec2_json.status_code != 200:
+        return ec2_json
+    if hasattr(s3_json, "status_code") and s3_json.status_code != 200:
+        return s3_json
     return jsonify({
         "ec2": ec2_json.get_json(),
         "s3": s3_json.get_json()
-    })
+    }), 200
 
 def aws_foundation_checks():
     region = request.args.get('region')
@@ -326,7 +451,6 @@ def aws_foundation_checks():
             results["billing_alerts_enabled"] = "fail"
             results["billing_alerts_enabled_details"] = [{"reason": f"Error: {str(e)}"}]
 
-        return jsonify(results)
+        return jsonify(results), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-

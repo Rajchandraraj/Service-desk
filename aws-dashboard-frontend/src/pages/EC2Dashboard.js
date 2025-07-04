@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { API_BASE_URL, ANSIBLE_API_BASE } from '../config';
-
+import RequestApprovalModal from "../components/RequestApprovalModal";
+import { toast } from "react-toastify";
 
 
 
@@ -103,6 +104,7 @@ function InstallSection({ instanceId, region, onInstallComplete }) {
   const [privateIp, setPrivateIp] = useState(null);
   const [apiHealth, setApiHealth] = useState(null);
   const [error, setError] = useState(null);
+
 
   const services = [
     'apache', 'mongo', 'node', 'elasticsearch', 
@@ -492,6 +494,8 @@ function EC2Dashboard({ region = 'us-east-1' }) {
   const [installExpandedId, setInstallExpandedId] = useState(null);
   const [filter, setFilter] = useState('all');
   const [apiHealth, setApiHealth] = useState(null);
+  const [approvalModal, setApprovalModal] = useState({ open: false, instanceId: null, action: null });
+  const [approvedRequests, setApprovedRequests] = useState([]);
 
   useEffect(() => {
     // Check Ansible API health on component mount
@@ -510,6 +514,13 @@ function EC2Dashboard({ region = 'us-east-1' }) {
         console.error('Error fetching instances:', err);
         alert('Failed to fetch instances. Please check if the backend is running.');
       });
+  }, [region]);
+
+  // Fetch approved requests on mount and when region changes
+  useEffect(() => {
+    axios.get(`${API_BASE_URL}/approval/approved`)
+      .then(res => setApprovedRequests(res.data.requests || []))
+      .catch(() => setApprovedRequests([]));
   }, [region]);
 
   // Start/Stop Instance
@@ -589,7 +600,59 @@ function EC2Dashboard({ region = 'us-east-1' }) {
 
   const filteredInstances = filter === 'all' ? instances : instances.filter(inst => inst.state === filter);
 
+  const handleResizeClick = async (instanceId, instanceRegion, setApprovalModal) => {
+    const res = await axios.get(`${API_BASE_URL}/approval/pending`);
+    const pending = res.data.requests.find(
+      r => r.instance_id === instanceId && r.region === instanceRegion
+    );
+    setApprovalModal({ open: true, instanceId, region: instanceRegion, action: "resize" }); // Always set
+    if (!pending) {
+      toast.success("Resize allowed! No approval needed.", { position: "top-right", rtl: true });
+      // Optionally call your resize logic here
+    }
+  };
+
+  // Helper function to check if an instance is approved
+  const isInstanceApproved = (instanceId, region, action) =>
+    approvedRequests.some(
+      req =>
+        req.instance_id === instanceId &&
+        req.region === region &&
+        req.action === action &&
+        req.status === "approved"
+    );
+
+  // Show approval toast if redirected from approval page
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("approved") === "true") {
+      toast.success("Request approved! You can now resize the instance.", {
+        position: "top-right",
+        rtl: true,
+      });
+      // Optionally, remove the query param so it doesn't show again on refresh
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  const refreshApprovals = () => {
+    axios.get(`${API_BASE_URL}/approval/approved`)
+      .then(res => setApprovedRequests(res.data.requests || []))
+      .catch(() => setApprovedRequests([]));
+  };
+
+  // Add this function inside your EC2Dashboard component
+  const showApprovalError = (msg) => {
+    toast.error(msg, { position: "top-right", rtl: true });
+  };
+
+  useEffect(() => {
+    refreshApprovals();
+  }, []);
+
   return (
+    
+
     <div className="mt-4 p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">EC2 Instances in {region}</h2>
@@ -709,32 +772,44 @@ function EC2Dashboard({ region = 'us-east-1' }) {
                               </button>
                             )}
                             <button
-                              onClick={(e) => {
+                              onClick={async (e) => {
                                 e.stopPropagation();
-                                handleResize(inst.id, inst.type);
+                                if (isInstanceApproved(inst.id, inst.region || region)) {
+                                  handleResize(inst.id, inst.type);
+                                } else {
+                                  await handleResizeClick(inst.id, inst.region || region, setApprovalModal);
+                                }
                               }}
-                              className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                              className={`px-3 py-1 rounded ${isInstanceApproved(inst.id, inst.region || region) ? "bg-blue-500 hover:bg-blue-600 text-white" : "bg-blue-500 text-white"}`}
                             >
                               Resize
                             </button>
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setInstallExpandedId(installExpandedId === inst.id ? null : inst.id);
-                              }}
-                              className="bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600"
-                            >
-                              Install
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTerminate(inst.id);
-                              }}
-                              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                            >
-                              Terminate
-                            </button>
+  onClick={async (e) => {
+    e.stopPropagation();
+    if (isInstanceApproved(inst.id, inst.region || region, "install")) {
+      setInstallExpandedId(installExpandedId === inst.id ? null : inst.id);
+    } else {
+      setApprovalModal({ open: true, instanceId: inst.id, region: inst.region || region, action: "install" });
+    }
+  }}
+  className="bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600"
+>
+  Install
+</button>
+          <button
+           onClick={async (e) => {
+           e.stopPropagation();
+           if (isInstanceApproved(inst.id, inst.region || region, "terminate")) {
+              handleTerminate(inst.id); // <-- allow terminate if approved
+             } else {
+                setApprovalModal({ open: true, instanceId: inst.id, region: inst.region || region, action: "terminate" }); // <-- request approval if not approved
+                      }
+              }}
+                 className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                 >
+                  Terminate
+                  </button>
                           </div>
                         </div>
                       </td>
@@ -766,7 +841,20 @@ function EC2Dashboard({ region = 'us-east-1' }) {
           </tbody>
         </table>
       )}
+
+      <RequestApprovalModal
+        open={approvalModal.open}
+        onClose={() => setApprovalModal({ open: false, instanceId: null, region: null, action: null })}
+        action={approvalModal.action}
+        instanceId={approvalModal.instanceId}
+        region={approvalModal.region}
+        onSubmitted={refreshApprovals} // <-- Pass refreshApprovals here!
+        onError={(msg) => toast.error(msg, { position: "top-right", rtl: true })}
+        refreshApprovals={refreshApprovals}
+      />
     </div>
+    
+    
   );
 }
 

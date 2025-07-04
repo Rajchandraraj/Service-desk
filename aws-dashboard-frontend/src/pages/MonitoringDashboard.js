@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import AlarmGraph from '../components/AlarmGraph';
@@ -7,6 +8,7 @@ import { API_BASE_URL } from '../config';
 const REGIONS = ['us-east-1', 'us-west-2', 'ap-south-1'];
 
 function MonitoringDashboard() {
+  const navigate = useNavigate();
   const [alarms, setAlarms] = useState([]);
   const [selected, setSelected] = useState(null);
   const [metrics, setMetrics] = useState({});
@@ -58,6 +60,13 @@ function MonitoringDashboard() {
       ]);
     }
   }, [selected, instanceId, metricName, timeWindow, startDate, endDate]);
+
+  React.useEffect(() => {
+    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    if (!isLoggedIn) {
+      navigate("/login");
+    }
+  }, [navigate]);
 
   const handleSelectAlarm = (alarm) => {
     if (!alarm || !alarm.dimensions) {

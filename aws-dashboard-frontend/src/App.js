@@ -8,7 +8,16 @@ import VPCCreateForm from './pages/VPCCreateForm.js';
 import ECSCreateForm from './pages/ECSCreateForm.js';
 import BillingDashboard from './pages/billinginformation.js'; // <-- Sahi file ka import
 import axios from 'axios';
-import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams, Navigate } from 'react-router-dom';
+import LoginPage from "./pages/LoginPage";
+import Dashboard from "./pages/Dashboard";
+import WarReviewTab from "./pages/WarReviewTab";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import ApprovalAction from "./pages/ApprovalAction";
+
+localStorage.removeItem("isLoggedIn"); // in production remove this line
+
 
 //const BACKEND_URL = 'http://localhost:5000';
 //const API_BASE_URL = 'http://localhost:5001'; // <-- Add your API base URL here
@@ -515,6 +524,7 @@ function App() {
   const [resourceTab, setResourceTab] = useState('EC2');
   const [region, setRegion] = useState('us-east-1');
   const [createService, setCreateService] = useState('S3');
+  
 
   return (
     <div className="p-4 font-sans">
@@ -622,6 +632,7 @@ function App() {
 
       {/* Security Tab */}
       {activeTab === 'Security' && <SecurityTab />}
+      <ToastContainer position="top-right" autoClose={3000} rtl />
     </div>
   );
 }
@@ -710,12 +721,50 @@ function MainNav() {
       <button onClick={() => navigate('/standaloneautomation')} className="px-4 py-2 rounded bg-gray-200">Standalone Automation</button>
       <button onClick={() => navigate('/billinginformation')} className="px-4 py-2 rounded bg-gray-200">Billing Information</button>
       <button onClick={() => navigate('/security')} className="px-4 py-2 rounded bg-gray-200">Security</button>
+      <button onClick={() => navigate('/war-review')} className="px-4 py-2 rounded bg-gray-200">WAR Review</button>
+      {/* Add your test toast button here */} 
+      <button
+        className="px-4 py-2 rounded bg-green-500 text-white"
+        onClick={() => toast.success("Test toast!")}
+      >
+        Test Toast
+      </button>   
     </nav>
   );
 }
 
 // Place this just before export default App;
 function AppWithRouter() {
+  const [region, setRegion] = useState('us-east-1');
+  // Use localStorage to persist login state
+  const [user, setUser] = useState(localStorage.getItem("isLoggedIn") === "true");
+
+  // Handle login: set user and localStorage
+  const handleLogin = () => {
+    localStorage.setItem("isLoggedIn", "true");
+    setUser(true);
+  };
+
+  // Handle logout: clear user and localStorage (add a logout button if needed)
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    setUser(false);
+  };
+
+  // If not logged in, show only the login page
+  if (!user) {
+    return (
+      <BrowserRouter>
+        <Routes>
+      <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+      <Route path="/approval/approve/:requestId" element={<ApprovalAction />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  // If logged in, show the rest of your app (unchanged)
   return (
     <BrowserRouter>
       <div className="p-4 font-sans">
@@ -727,16 +776,26 @@ function AppWithRouter() {
             onClick={() => window.location.href = FRONTEND_URL}
           />
           <h1 className="text-2xl">Welcome to Rapyder Service Desk</h1>
+          {/* Optional: Add a logout button */}
+          <button
+            onClick={handleLogout}
+            className="bg-white text-orange-500 font-bold px-4 py-2 rounded shadow hover:bg-orange-100 transition"
+          >
+            Logout
+          </button>
         </header>
+
+
         <MainNav />
         <Routes>
           <Route path="/monitoring" element={<MonitoringDashboard />} />
           <Route path="/resourcemanagement/:service?/:region?" element={<ResourceManagementPage />} />
           <Route path="/resourcecreation/:service?/:region?" element={<ResourceCreationPage />} />
-          
           <Route path="/standaloneautomation" element={<StandaloneAutomation />} />
           <Route path="/billinginformation/:start1?/:end1?/:region?/:start2?/:end2?" element={<BillingDashboard />} />
-         <Route path="/security/:section?/:region?" element={<SecurityTab />} />
+          <Route path="/security/:section?/:region?" element={<SecurityTab />} />
+          <Route path="/war-review" element={<WarReviewTab region={region} />} />
+          <Route path="/approval/approve/:requestId" element={<ApprovalAction />} />
         </Routes>
         {/* Chatbot Floating Button and Iframe */}
         <div className="fixed bottom-4 right-4 z-50">
@@ -761,6 +820,7 @@ function AppWithRouter() {
             style={{ position: 'absolute', bottom: '90px', right: '0' }}
           ></iframe>
         </div>
+        <ToastContainer position="top-right" autoClose={3000} rtl />
       </div>
     </BrowserRouter>
   );
@@ -896,3 +956,28 @@ function ResourceManagementPage() {
     </div>
   );
 }
+
+// Approve
+const handleApprove = async (requestId) => {
+  try {
+    await axios.post(`${BACKEND_URL}/approval/approve/${requestId}`);
+    toast.success('Request approved!', { position: "top-right", rtl: true });
+    // Optionally refresh your data here
+  } catch (err) {
+    toast.error('Approval failed!', { position: "top-right", rtl: true });
+  }
+};
+
+// Reject
+const handleReject = async (requestId) => {
+  try {
+    await axios.post(`http://localhost:5000/approval/reject/${requestId}`);
+    toast.info('Request rejected.', { position: "top-right", rtl: true });
+    // Optionally refresh your data here
+  } catch (err) {
+    toast.error('Rejection failed!', { position: "top-right", rtl: true });
+  }
+};
+
+
+
